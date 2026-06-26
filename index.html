@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15 Puzzle</title>
+<meta name="description" content="Classic sliding tile puzzle — arrange tiles 1–15 in order to win.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #E8E5DF;
+    --board-bg:   #AEAAA2;
+    --tile-bg:    #F6F4F0;
+    --tile-hover: #EDE9E3;
+    --tile-press: #E2DDD5;
+    --ink:        #1C1A17;
+    --muted:      #8A877F;
+    --accent:     #3550CC;
+    --accent-gl:  rgba(53,80,204,0.18);
+    --win-scrim:  rgba(232,229,223,0.88);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 24px 20px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  .header {
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .title-eyebrow {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .title-num {
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .stats {
+    display: flex;
+    gap: 22px;
+    padding-bottom: 6px;
+  }
+
+  .stat { text-align: right; }
+
+  .stat-val {
+    font-size: 1.625rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+
+  .stat-lbl {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Board ──────────────────────────────────────────────────── */
+  .board-wrap { width: 100%; }
+
+  .board {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--board-bg);
+    border-radius: 14px;
+    box-shadow:
+      inset 0 2px 8px rgba(0,0,0,0.20),
+      inset 0 1px 2px rgba(0,0,0,0.10),
+      0 6px 24px rgba(0,0,0,0.14);
+  }
+
+  /* ── Tiles ──────────────────────────────────────────────────── */
+  .tile {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tile-bg);
+    border-radius: 8px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.92),
+      0 2px 5px rgba(0,0,0,0.13),
+      0 1px 2px rgba(0,0,0,0.08);
+    user-select: none;
+    cursor: default;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    color: var(--ink);
+    transition:
+      transform 165ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      background-color 80ms ease,
+      box-shadow 80ms ease;
+    will-change: transform;
+  }
+
+  .tile.movable { cursor: pointer; }
+
+  .tile.movable:hover {
+    background: var(--tile-hover);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.92),
+      0 4px 14px var(--accent-gl),
+      0 2px 6px rgba(0,0,0,0.10);
+  }
+
+  .tile.movable:active {
+    background: var(--tile-press);
+    box-shadow:
+      inset 0 1px 3px rgba(0,0,0,0.12),
+      0 1px 2px rgba(0,0,0,0.08);
+    transition-duration: 60ms;
+  }
+
+  /* ── Controls ───────────────────────────────────────────────── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 13px 16px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: opacity 100ms, transform 80ms, box-shadow 100ms;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn-secondary {
+    background: #D0CCC5;
+    color: var(--ink);
+  }
+  .btn-secondary:hover { background: #C6C2BB; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(53,80,204,0.30);
+  }
+  .btn-primary:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 16px rgba(53,80,204,0.38);
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.015em;
+  }
+
+  /* ── Win Overlay ────────────────────────────────────────────── */
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--win-scrim);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .win-overlay.show { display: flex; }
+
+  .win-card {
+    background: var(--tile-bg);
+    border-radius: 20px;
+    padding: 38px 32px;
+    text-align: center;
+    box-shadow: 0 24px 72px rgba(0,0,0,0.18);
+    width: min(340px, 88vw);
+    animation: card-pop 290ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes card-pop {
+    from { transform: scale(0.80); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+
+  .win-icon {
+    width: 52px;
+    height: 52px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    color: #fff;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(53,80,204,0.35);
+  }
+
+  .win-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
+    text-wrap: balance;
+  }
+
+  .win-detail {
+    font-size: 0.9375rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .win-detail b { color: var(--ink); font-weight: 700; }
+
+  /* ── Responsive / A11y ──────────────────────────────────────── */
+  @media (max-width: 440px) {
+    .app { padding: 16px; gap: 16px; }
+    .title-num { font-size: 3.5rem; }
+    .stat-val  { font-size: 1.375rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile { transition: none; }
+    .win-card { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div>
+      <span class="title-eyebrow">Sliding Puzzle</span>
+      <div class="title-num">15</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-val" id="moves-val">0</div>
+        <div class="stat-lbl">手数</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="timer-val">0:00</div>
+        <div class="stat-lbl">時間</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="board-wrap">
+    <div class="board" id="board" role="grid" aria-label="15パズルボード"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" id="btn-reset">リセット</button>
+    <button class="btn btn-primary"   id="btn-new">新しいゲーム</button>
+  </div>
+
+  <p class="hint">タイルをクリックまたは矢印キーでスライド</p>
+</div>
+
+<div class="win-overlay" id="win-overlay" role="dialog" aria-modal="true" aria-label="パズルクリア">
+  <div class="win-card">
+    <div class="win-icon" aria-hidden="true">✓</div>
+    <div class="win-title">クリア！</div>
+    <div class="win-detail">
+      <b id="win-moves">0</b> 手 &ensp;·&ensp; <b id="win-time">0:00</b>
+    </div>
+    <button class="btn btn-primary" id="btn-again">もう一度</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const GRID = 4;
+  const N    = GRID * GRID;
+
+  // ── State ────────────────────────────────────────────────────────────
+  let state    = [];   // 16 values; 0 = empty cell
+  let initSnap = [];   // snapshot of shuffled start (for Reset)
+  let emptyIdx = 15;
+  let moves    = 0;
+  let elapsed  = 0;
+  let timerID  = null;
+  let running  = false;
+  let won      = false;
+  let tileEls  = {};   // value → <div>
+
+  const board      = document.getElementById('board');
+  const movesEl    = document.getElementById('moves-val');
+  const timerEl    = document.getElementById('timer-val');
+  const winOverlay = document.getElementById('win-overlay');
+  const winMovesEl = document.getElementById('win-moves');
+  const winTimeEl  = document.getElementById('win-time');
+
+  // ── DOM ──────────────────────────────────────────────────────────────
+  function buildTiles() {
+    board.innerHTML = '';
+    tileEls = {};
+    for (let v = 1; v <= 15; v++) {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.textContent = v;
+      el.setAttribute('role', 'gridcell');
+      el.setAttribute('aria-label', 'タイル ' + v);
+      el.addEventListener('click', () => handleClick(v));
+      board.appendChild(el);
+      tileEls[v] = el;
+    }
+  }
+
+  // ── Layout ───────────────────────────────────────────────────────────
+  // Tiles are absolutely positioned via CSS transform.
+  // When state changes, updating transforms triggers smooth CSS transitions.
+  function layout(animate) {
+    const bw  = board.clientWidth;
+    const gap = Math.round(bw * 0.026);
+    const ts  = (bw - gap * 5) / 4;
+    const fs  = Math.round(ts * 0.38);
+
+    for (let v = 1; v <= 15; v++) {
+      const idx = state.indexOf(v);
+      const row = Math.floor(idx / GRID);
+      const col = idx % GRID;
+      const x   = gap + col * (ts + gap);
+      const y   = gap + row * (ts + gap);
+      const el  = tileEls[v];
+
+      if (!animate) el.style.transition = 'none';
+      el.style.width     = ts + 'px';
+      el.style.height    = ts + 'px';
+      el.style.fontSize  = fs + 'px';
+      el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+      if (!animate) requestAnimationFrame(() => { el.style.transition = ''; });
+    }
+
+    markMovable();
+  }
+
+  function markMovable() {
+    const adj = neighbors(emptyIdx);
+    for (let v = 1; v <= 15; v++) {
+      tileEls[v].classList.toggle('movable', adj.includes(state.indexOf(v)));
+    }
+  }
+
+  // ── Puzzle Logic ─────────────────────────────────────────────────────
+  function neighbors(idx) {
+    const r = Math.floor(idx / GRID), c = idx % GRID;
+    const out = [];
+    if (r > 0)        out.push(idx - GRID);
+    if (r < GRID - 1) out.push(idx + GRID);
+    if (c > 0)        out.push(idx - 1);
+    if (c < GRID - 1) out.push(idx + 1);
+    return out;
+  }
+
+  function slide(tileIdx) {
+    if (!neighbors(emptyIdx).includes(tileIdx)) return false;
+    state[emptyIdx] = state[tileIdx];
+    state[tileIdx]  = 0;
+    emptyIdx        = tileIdx;
+    return true;
+  }
+
+  function isSolved() {
+    for (let i = 0; i < 15; i++) if (state[i] !== i + 1) return false;
+    return state[15] === 0;
+  }
+
+  // 300 random valid moves — guarantees solvability without parity check
+  function doShuffle() {
+    state    = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];
+    emptyIdx = 15;
+    let prev = -1;
+    for (let i = 0; i < 300; i++) {
+      let nb = neighbors(emptyIdx);
+      if (nb.length > 1) nb = nb.filter(n => n !== prev);
+      const pick = nb[Math.floor(Math.random() * nb.length)];
+      prev = emptyIdx;
+      slide(pick);
+    }
+    initSnap = state.slice();
+  }
+
+  function doReset() {
+    state    = initSnap.slice();
+    emptyIdx = state.indexOf(0);
+  }
+
+  // ── Timer ────────────────────────────────────────────────────────────
+  function startTimer() {
+    if (running) return;
+    running = true;
+    timerID = setInterval(() => {
+      elapsed++;
+      timerEl.textContent = fmt(elapsed);
+    }, 1000);
+  }
+
+  function stopTimer() { clearInterval(timerID); running = false; }
+
+  function fmt(s) {
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function clearStats() {
+    moves = 0; elapsed = 0;
+    stopTimer();
+    movesEl.textContent = '0';
+    timerEl.textContent = '0:00';
+  }
+
+  // ── Interaction ───────────────────────────────────────────────────────
+  function handleClick(v) {
+    if (won) return;
+    if (!slide(state.indexOf(v))) return;
+    startTimer();
+    movesEl.textContent = ++moves;
+    layout(true);
+    if (isSolved()) handleWin();
+  }
+
+  function handleKey(e) {
+    if (won) return;
+    // Arrow direction = which tile moves into the empty space
+    const offsets = { ArrowUp: GRID, ArrowDown: -GRID, ArrowLeft: 1, ArrowRight: -1 };
+    if (!(e.key in offsets)) return;
+    e.preventDefault();
+    const target = emptyIdx + offsets[e.key];
+    if (target < 0 || target >= N) return;
+    if (!slide(target)) return;
+    startTimer();
+    movesEl.textContent = ++moves;
+    layout(true);
+    if (isSolved()) handleWin();
+  }
+
+  function handleWin() {
+    won = true;
+    stopTimer();
+    winMovesEl.textContent = moves;
+    winTimeEl.textContent  = fmt(elapsed);
+    setTimeout(() => {
+      winOverlay.classList.add('show');
+      document.getElementById('btn-again').focus();
+    }, 380);
+  }
+
+  function newGame() {
+    winOverlay.classList.remove('show');
+    clearStats();
+    won = false;
+    doShuffle();
+    layout(false);
+  }
+
+  function resetGame() {
+    if (won) { newGame(); return; }
+    winOverlay.classList.remove('show');
+    clearStats();
+    won = false;
+    doReset();
+    layout(false);
+  }
+
+  // ── Events ───────────────────────────────────────────────────────────
+  document.getElementById('btn-new').addEventListener('click', newGame);
+  document.getElementById('btn-reset').addEventListener('click', resetGame);
+  document.getElementById('btn-again').addEventListener('click', newGame);
+  document.addEventListener('keydown', handleKey);
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => layout(false), 120);
+  });
+
+  // ── Boot ─────────────────────────────────────────────────────────────
+  buildTiles();
+  doShuffle();
+  requestAnimationFrame(() => layout(false));
+})();
+</script>
+
+</body>
+</html>
