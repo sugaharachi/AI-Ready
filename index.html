@@ -6,37 +6,50 @@
   <title>資産管理 変換ツール</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    onload="console.log('JSZip ロード成功')"
+    onerror="console.warn('JSZip ロード失敗')"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-start justify-center p-6 py-10">
+<body class="bg-slate-100 min-h-screen flex items-start justify-center p-4 py-6">
 
-  <div class="w-full max-w-lg space-y-8">
+  <div class="w-full max-w-xl">
+
+    <!-- Tab bar -->
+    <div class="flex bg-white rounded-xl border border-slate-200 shadow-sm p-1 mb-5">
+      <button id="tab1" onclick="switchTab(1)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition-colors">資産台帳</button>
+      <button id="tab2" onclick="switchTab(2)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">仕訳明細</button>
+      <button id="tab3" onclick="switchTab(3)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">投資実績</button>
+    </div>
 
     <!-- =============================== -->
     <!-- Card 1: 資産台帳 変換ツール      -->
     <!-- =============================== -->
-    <div>
+    <div id="panel1">
       <div class="mb-4">
-        <h1 class="text-2xl font-bold text-slate-800">資産台帳 変換ツール</h1>
-        <p class="text-slate-500 text-sm mt-1">Excelファイルのレイアウトを自動整形します</p>
+        <p class="text-slate-500 text-sm">データのフォーマットを整形します。</p>
+        <p class="text-slate-500 text-sm">投資実績の資料作成に利用します。</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
-        <div class="p-8 space-y-4">
+        <div class="p-6 space-y-4">
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              資産台帳ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">SAPから抽出したExcelファイル</p>
+          </div>
 
           <div
             id="dropZone"
-            class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all select-none"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all select-none"
           >
-            <svg class="w-10 h-10 text-slate-400 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
             </svg>
-            <p class="text-slate-600 font-medium">ここにファイルをドロップ</p>
-            <p class="text-slate-400 text-sm mt-1">または</p>
-            <label class="mt-3 inline-block cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-              ファイルを選択
-              <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
-            </label>
-            <p class="text-slate-300 text-xs mt-3">.xlsx / .xls</p>
+            <span class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
           </div>
 
           <div id="fileInfo" style="display:none" class="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-3">
@@ -56,7 +69,7 @@
             disabled
             class="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            変換を実行
+            実行
           </button>
 
           <div id="statusSuccess" style="display:none" class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
@@ -88,19 +101,27 @@
 
         </div>
       </div>
+
     </div>
 
     <!-- =============================== -->
     <!-- Card 2: 科目明細・仕訳累計 一括  -->
     <!-- =============================== -->
-    <div>
+    <div id="panel2" style="display:none">
       <div class="mb-4">
-        <h1 class="text-2xl font-bold text-slate-800">科目明細・仕訳累計 一括処理</h1>
-        <p class="text-slate-500 text-sm mt-1">科目明細 → 仕訳累計追記 → マスタ照合 を順番に実行します</p>
+        <p class="text-slate-500 text-sm">単月の仕訳明細を累計に追加しPFと案件番号の設定を行います。</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
-        <div class="p-8 space-y-5">
+        <div class="p-6 space-y-4">
+
+          <!-- モード切替: 通常 / 四半期締め -->
+          <div class="flex bg-slate-100 rounded-lg p-1">
+            <button type="button" id="modeNormalBtn"
+              class="flex-1 py-1.5 rounded-md text-sm font-semibold bg-white text-slate-800 shadow-sm transition-colors">通常</button>
+            <button type="button" id="modeQtrBtn"
+              class="flex-1 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">四半期締め</button>
+          </div>
 
           <!-- 月度 -->
           <div>
@@ -114,13 +135,12 @@
             >
           </div>
 
-          <!-- 科目明細ソースファイル (C4) -->
-          <div>
+          <!-- 科目明細ファイル (通常モード, C4) -->
+          <div id="normalSrcBlock">
             <label class="block text-sm font-medium text-slate-700 mb-1">
-              科目明細ソースファイル <span class="text-red-500">*</span>
-              <span class="text-slate-400 font-normal ml-1">（旧VBA: C4）</span>
+              仕訳明細の単月ファイル <span class="text-red-500">*</span>
             </label>
-            <p class="text-xs text-slate-400 mb-2">SAPなどから出力したCSV / Excelファイル</p>
+            <p class="text-xs text-slate-400 mb-2">電子帳簿から出力したCSVファイル</p>
             <label for="srcFileInput" id="srcFileRow"
               class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
               <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -132,13 +152,31 @@
             <input type="file" id="srcFileInput" accept=".xlsx,.xls,.csv" class="hidden">
           </div>
 
+          <!-- 科目明細ファイル (四半期締めモード) -->
+          <div id="qtrSrcBlock" style="display:none">
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              仕訳明細の単月ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">SAPから抽出したExcelファイル</p>
+            <div
+              id="qtrFileRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all select-none"
+            >
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="qtrFileLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+              <input type="file" id="qtrFileInput" accept=".xlsx,.xls" class="hidden">
+            </div>
+          </div>
+
           <!-- 仕訳累計ファイル (C7) -->
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">
-              仕訳累計ファイル <span class="text-red-500">*</span>
-              <span class="text-slate-400 font-normal ml-1">（旧VBA: C7）</span>
+              仕訳明細累計ファイル <span class="text-red-500">*</span>
             </label>
-            <p class="text-xs text-slate-400 mb-2">追記・更新される仕訳累計Excelファイル</p>
+            <p class="text-xs text-slate-400 mb-2">前月の仕訳明細累計のExcelファイル</p>
             <label for="jishoFileInput" id="jishoFileRow"
               class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
               <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -150,13 +188,20 @@
             <input type="file" id="jishoFileInput" accept=".xlsx,.xls" class="hidden">
           </div>
 
-          <!-- マスタファイル (任意) -->
+          <!-- マスタファイル (保持・更新時のみ選択) -->
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">
               マスタファイル
-              <span class="text-slate-400 font-normal ml-1">（任意・年1回更新）</span>
+              <span class="text-slate-400 font-normal ml-1">（任意）</span>
             </label>
-            <p class="text-xs text-slate-400 mb-2">「マスタ」シートを含むExcelファイル。未選択時はステップ3をスキップ</p>
+            <p class="text-xs text-slate-400 mb-1">マスタに明細テキストに月等が入り前月と完全一致しない場合、PF、案件番号、明細テキストを保存する。</p>
+            <p class="text-xs text-slate-400 mb-2">一度選択すればブラウザに保存され、以降は毎回自動的に使用されます。更新があった時だけ選び直してください。</p>
+            <p class="text-xs text-slate-400 mb-2">
+              例：<br>
+              　　明細テキスト：手数料＿4月<br>
+              　　マスタ：手数料_
+            </p>
+            <p class="text-xs text-amber-600 mb-2">※ 保存はこのブラウザ・このPC限定です。別のPC／別のブラウザで開いた場合は最初にもう一度選択してください。</p>
             <label for="masterFileInput" id="masterFileRow"
               class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
               <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -166,6 +211,9 @@
               <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
             </label>
             <input type="file" id="masterFileInput" accept=".xlsx,.xls" class="hidden">
+            <p id="masterClearRow" style="display:none" class="text-xs text-slate-400 mt-1">
+              保存済みのマスタを使用します。<button type="button" id="masterClearBtn" class="text-indigo-600 hover:underline">保存をクリア</button>
+            </p>
           </div>
 
           <!-- Execute button -->
@@ -174,16 +222,16 @@
             disabled
             class="w-full py-3 rounded-xl font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            一括実行
+            実行
           </button>
 
           <!-- Progress -->
           <div id="execProgress" style="display:none" class="space-y-1">
             <div id="step1Row" class="flex items-center gap-2 text-sm text-slate-500">
-              <span id="step1Icon">○</span><span>ステップ1: 科目明細を処理中...</span>
+              <span id="step1Icon">○</span><span>ステップ1: 仕訳明細を処理中...</span>
             </div>
             <div id="step2Row" class="flex items-center gap-2 text-sm text-slate-400">
-              <span id="step2Icon">○</span><span>ステップ2: 仕訳累計に追記中...</span>
+              <span id="step2Icon">○</span><span>ステップ2: 仕訳明細累計に追記中...</span>
             </div>
             <div id="step3Row" class="flex items-center gap-2 text-sm text-slate-400">
               <span id="step3Icon">○</span><span>ステップ3: マスタデータで更新中...</span>
@@ -216,7 +264,135 @@
               <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
-              更新済み仕訳累計ファイルをダウンロード
+              更新済み仕訳明細累計ファイルをダウンロード
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =============================== -->
+    <!-- Panel 3: 投資実績               -->
+    <!-- =============================== -->
+    <div id="panel3" style="display:none">
+      <div class="mb-4">
+        <p class="text-slate-500 text-sm">投資実績ファイルを作成します。</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="p-6 space-y-4">
+
+          <!-- 月度 -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              月度 <span class="text-red-500">*</span>
+            </label>
+            <input type="month" id="toushiDateInput"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- テンプレートファイル (C10) -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              テンプレートファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">前月の投資実績Excelファイル</p>
+            <label for="toushiTemplateInput" id="toushiTemplateRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="toushiTemplateLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="toushiTemplateInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 仕訳累計ファイル (C7) -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              仕訳明細累計ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">更新した仕訳明細累計Excelファイル</p>
+            <label for="toushiJishoInput" id="toushiJishoRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="toushiJishoLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="toushiJishoInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 資産台帳ファイル (C3) -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              資産台帳ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">フォーマット調整した資産台帳Excelファイル</p>
+            <label for="toushiSantaiInput" id="toushiSantaiRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="toushiSantaiLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="toushiSantaiInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- Execute -->
+          <button id="toushiExecBtn" disabled
+            class="w-full py-3 rounded-xl font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            実行
+          </button>
+
+          <!-- Progress -->
+          <div id="toushiProgress" style="display:none" class="space-y-1">
+            <div id="toushiStep1Row" class="flex items-center gap-2 text-sm text-slate-500">
+              <span id="toushiStep1Icon">○</span><span>ステップ1: 経費発生データを処理中...</span>
+            </div>
+            <div id="toushiStep2Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="toushiStep2Icon">○</span><span>ステップ2: 投資発生データをフィルタリング中...</span>
+            </div>
+            <div id="toushiStep3Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="toushiStep3Icon">○</span><span>ステップ3: 建仮データをフィルタリング中...</span>
+            </div>
+            <div id="toushiStep4Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="toushiStep4Icon">○</span><span>ステップ4: 資産情報を更新中...</span>
+            </div>
+          </div>
+
+          <!-- Success -->
+          <div id="toushiSuccess" style="display:none" class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <div>
+              <p class="text-emerald-800 font-medium text-sm">処理が完了しました</p>
+              <p id="toushiSuccessDetail" class="text-emerald-600 text-xs mt-0.5"></p>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="toushiError" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p id="toushiErrorMsg" class="text-red-800 text-sm"></p>
+          </div>
+
+          <!-- Download -->
+          <div id="toushiDownloadArea" style="display:none">
+            <a id="dlToushi" href="#"
+              class="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+              <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              更新済み投資実績ファイルをダウンロード
             </a>
           </div>
 
@@ -224,7 +400,7 @@
       </div>
     </div>
 
-  </div><!-- /max-w-lg -->
+  </div><!-- /wrapper -->
 
   <script>
     // =====================================================
@@ -326,19 +502,79 @@
         showError('処理エラー: ' + e.message);
       } finally {
         processBtn.disabled = false;
-        processBtn.textContent = '変換を実行';
+        processBtn.textContent = '実行';
       }
     });
 
     // =====================================================
     // Card 2: 科目明細・仕訳累計 一括処理
+    //   モード切替（通常／四半期締め）で科目明細ソースの取り込み方法のみ変える。
+    //   仕訳累計・マスタ・実行・進捗・出力は共通。
     // =====================================================
+    const modeNormalBtn  = document.getElementById('modeNormalBtn');
+    const modeQtrBtn     = document.getElementById('modeQtrBtn');
+    const normalSrcBlock = document.getElementById('normalSrcBlock');
+    const qtrSrcBlock    = document.getElementById('qtrSrcBlock');
+    const qtrFileInput   = document.getElementById('qtrFileInput');
+    const qtrFileRow     = document.getElementById('qtrFileRow');
+    const qtrFileLabel   = document.getElementById('qtrFileLabel');
+
+    let qtrMode = false;
+    let qtrSelectedFile = null;
+
+    function setMode(isQtr) {
+      qtrMode = isQtr;
+      normalSrcBlock.style.display = isQtr ? 'none' : 'block';
+      qtrSrcBlock.style.display    = isQtr ? 'block' : 'none';
+      modeNormalBtn.classList.toggle('bg-white', !isQtr);
+      modeNormalBtn.classList.toggle('shadow-sm', !isQtr);
+      modeNormalBtn.classList.toggle('text-slate-800', !isQtr);
+      modeNormalBtn.classList.toggle('text-slate-500', isQtr);
+      modeQtrBtn.classList.toggle('bg-white', isQtr);
+      modeQtrBtn.classList.toggle('shadow-sm', isQtr);
+      modeQtrBtn.classList.toggle('text-slate-800', isQtr);
+      modeQtrBtn.classList.toggle('text-slate-500', !isQtr);
+      updateExecBtn();
+    }
+    modeNormalBtn.addEventListener('click', () => setMode(false));
+    modeQtrBtn.addEventListener('click', () => setMode(true));
+
+    qtrFileInput.addEventListener('change', e => {
+      if (e.target.files[0]) {
+        qtrSelectedFile = e.target.files[0];
+        qtrFileLabel.textContent = qtrSelectedFile.name;
+        qtrFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+        updateExecBtn();
+      }
+    });
+    qtrFileRow.addEventListener('click', () => qtrFileInput.click());
+    qtrFileRow.addEventListener('dragover', e => {
+      e.preventDefault();
+      qtrFileRow.classList.add('border-indigo-500', 'bg-indigo-50');
+    });
+    qtrFileRow.addEventListener('dragleave', () => {
+      qtrFileRow.classList.remove('border-indigo-500', 'bg-indigo-50');
+    });
+    qtrFileRow.addEventListener('drop', e => {
+      e.preventDefault();
+      qtrFileRow.classList.remove('border-indigo-500', 'bg-indigo-50');
+      const f = e.dataTransfer.files[0];
+      if (f && /\.(xlsx|xls)$/i.test(f.name)) {
+        qtrSelectedFile = f;
+        qtrFileLabel.textContent = f.name;
+        qtrFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+        updateExecBtn();
+      }
+    });
+
     const srcFileInput    = document.getElementById('srcFileInput');
     const srcFileLabel    = document.getElementById('srcFileLabel');
     const jishoFileInput  = document.getElementById('jishoFileInput');
     const jishoFileLabel  = document.getElementById('jishoFileLabel');
     const masterFileInput = document.getElementById('masterFileInput');
     const masterFileLabel = document.getElementById('masterFileLabel');
+    const masterClearRow  = document.getElementById('masterClearRow');
+    const masterClearBtn  = document.getElementById('masterClearBtn');
     const yearMonthInput  = document.getElementById('yearMonthInput');
     const execBtn         = document.getElementById('execBtn');
     const execProgress    = document.getElementById('execProgress');
@@ -349,10 +585,81 @@
     const execDownloadArea = document.getElementById('execDownloadArea');
     const dlExec          = document.getElementById('dlExec');
 
-    let execSrcFile = null, execJishoFile = null, execMasterFile = null;
+    // マスタファイルはブラウザに保存し、更新時のみ選び直せば毎回自動的に使用する
+    const MASTER_STORAGE_KEY = 'assetTool_masterFile_v1';
+
+    function bytesToBase64(bytes) {
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+    function base64ToBytes(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+    function saveMasterToStorage(name, bytes) {
+      try {
+        localStorage.setItem(MASTER_STORAGE_KEY, JSON.stringify({ name, data: bytesToBase64(bytes) }));
+      } catch (e) {
+        console.warn('マスタファイルの保存に失敗しました（ストレージ容量不足の可能性）:', e);
+      }
+    }
+    function loadMasterFromStorage() {
+      try {
+        const raw = localStorage.getItem(MASTER_STORAGE_KEY);
+        if (!raw) return null;
+        const { name, data } = JSON.parse(raw);
+        const bytes = base64ToBytes(data);
+        return { name, arrayBuffer: () => Promise.resolve(bytes.buffer) };
+      } catch (e) {
+        console.warn('保存済みマスタファイルの読み込みに失敗しました:', e);
+        return null;
+      }
+    }
+    function clearSavedMaster() {
+      localStorage.removeItem(MASTER_STORAGE_KEY);
+    }
+
+    function updateMasterUI() {
+      if (execMasterFile) {
+        masterFileLabel.textContent = execMasterFile.name;
+        masterFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+        masterClearRow.style.display = 'block';
+      } else {
+        masterFileLabel.textContent = 'ファイルを選択...';
+        masterFileLabel.classList.replace('text-slate-700', 'text-slate-400');
+        masterClearRow.style.display = 'none';
+      }
+    }
+
+    async function selectMasterFile(file) {
+      execMasterFile = file;
+      updateMasterUI();
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        saveMasterToStorage(file.name, bytes);
+      } catch (e) {
+        console.warn('マスタファイルの保存に失敗しました:', e);
+      }
+    }
+
+    masterClearBtn.addEventListener('click', () => {
+      execMasterFile = null;
+      clearSavedMaster();
+      updateMasterUI();
+    });
+
+    let execSrcFile = null, execJishoFile = null, execMasterFile = loadMasterFromStorage();
+    updateMasterUI();
 
     function updateExecBtn() {
-      execBtn.disabled = !(execSrcFile && execJishoFile && yearMonthInput.value);
+      const srcOk = qtrMode ? !!qtrSelectedFile : !!execSrcFile;
+      execBtn.disabled = !(srcOk && execJishoFile && yearMonthInput.value);
     }
 
     srcFileInput.addEventListener('change', e => {
@@ -374,11 +681,7 @@
     });
 
     masterFileInput.addEventListener('change', e => {
-      if (e.target.files[0]) {
-        execMasterFile = e.target.files[0];
-        masterFileLabel.textContent = execMasterFile.name;
-        masterFileLabel.classList.replace('text-slate-400', 'text-slate-700');
-      }
+      if (e.target.files[0]) selectMasterFile(e.target.files[0]);
     });
 
     yearMonthInput.addEventListener('change', updateExecBtn);
@@ -411,11 +714,7 @@
       jishoFileLabel.classList.replace('text-slate-400', 'text-slate-700');
       updateExecBtn();
     });
-    setupFileDrop(document.getElementById('masterFileRow'), f => {
-      execMasterFile = f;
-      masterFileLabel.textContent = f.name;
-      masterFileLabel.classList.replace('text-slate-400', 'text-slate-700');
-    });
+    setupFileDrop(document.getElementById('masterFileRow'), f => selectMasterFile(f));
 
     function resetExec() {
       execSuccess.style.display = 'none';
@@ -443,18 +742,21 @@
     }
 
     execBtn.addEventListener('click', async () => {
-      if (!execSrcFile || !execJishoFile || !yearMonthInput.value) return;
+      const srcFile = qtrMode ? qtrSelectedFile : execSrcFile;
+      if (!srcFile || !execJishoFile || !yearMonthInput.value) return;
       execBtn.disabled = true;
       execBtn.textContent = '処理中...';
       resetExec();
       execProgress.style.display = 'block';
 
       try {
-        // Step 1: 科目明細
+        // Step 1: 科目明細（通常 or 四半期締め）
         setStep(1, 'active');
         await tick();
-        const srcBytes   = new Uint8Array(await execSrcFile.arrayBuffer());
-        const mokumeiWb  = processMokumei(srcBytes, yearMonthInput.value);
+        const srcBytes   = new Uint8Array(await srcFile.arrayBuffer());
+        const mokumeiWb  = qtrMode
+          ? processQtrKamokuMeisai(srcBytes, yearMonthInput.value)
+          : processMokumei(srcBytes, yearMonthInput.value);
         setStep(1, 'done');
 
         // Step 2: 仕訳累計への追加
@@ -469,21 +771,46 @@
         if (execMasterFile) {
           setStep(3, 'active');
           await tick();
+          console.log('[DEBUG] Step3 updateJisho 開始');
           const masterBytes = new Uint8Array(await execMasterFile.arrayBuffer());
           finalWb = updateJisho(updatedWb, masterBytes);
+          console.log('[DEBUG] Step3 updateJisho 完了');
           setStep(3, 'done');
         } else {
           setStep(3, 'skip');
         }
 
-        // xlsx出力: UTF-8ネイティブのため日本語フォーマット(yyyy年m月等)が正しく動作する
-        // !merges のみ除去（行列操作後は無効になるため）
+        // xlsx出力
+        console.log('[DEBUG] !merges 除去 開始');
         finalWb.SheetNames.forEach(n => { const ws = finalWb.Sheets[n]; if (ws) delete ws['!merges']; });
+        console.log('[DEBUG] !merges 除去 完了');
+
+        console.log('[DEBUG] collectColoredCells 開始');
+        const coloredCells = collectColoredCells(finalWb);
+        console.log('[DEBUG] collectColoredCells 完了 件数:', coloredCells.length);
+
+        console.log('[DEBUG] XLSX.write 開始');
         const output = XLSX.write(finalWb, { type: 'array', bookType: 'xlsx' });
+        console.log('[DEBUG] XLSX.write 完了');
+        let outBytes = new Uint8Array(output);
+
+        // JSZipで色を適用（5秒タイムアウト・例外時はいずれも色なしで続行）
+        if (coloredCells.length > 0) {
+          console.log('[DEBUG] applyColors 開始');
+          try {
+            const timeout = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+            const colored = await Promise.race([applyColors(outBytes, coloredCells), timeout]);
+            if (colored) { outBytes = colored; console.log('[DEBUG] applyColors 成功'); }
+            else console.warn('[DEBUG] applyColors タイムアウト（色なしで続行）');
+          } catch (colorErr) {
+            console.warn('[DEBUG] applyColors 例外（色なしで続行）:', colorErr);
+          }
+        }
+        console.log('[DEBUG] Blob 生成 開始');
 
         const baseName = execJishoFile.name.replace(/\.[^.]+$/, '');
         const outName  = baseName + '_更新済.xlsx';
-        const blob     = new Blob([new Uint8Array(output)], {
+        const blob     = new Blob([outBytes], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         });
         const url      = URL.createObjectURL(blob);
@@ -494,7 +821,7 @@
         const jishoWs = finalWb.Sheets[finalWb.SheetNames[0]];
         const jRange  = XLSX.utils.decode_range(jishoWs['!ref']);
         const stepInfo = execMasterFile ? '（ステップ1〜3完了）' : '（ステップ1〜2完了、マスタ照合スキップ）';
-        execSuccessDetail.textContent = `仕訳累計 ${jRange.e.r} 行 → ${outName} ${stepInfo}`;
+        execSuccessDetail.textContent = `仕訳明細累計 ${jRange.e.r} 行 → ${outName} ${stepInfo}`;
         execSuccess.style.display = 'flex';
         execDownloadArea.style.display = 'block';
 
@@ -503,7 +830,7 @@
         execError.style.display = 'flex';
       } finally {
         execBtn.disabled = false;
-        execBtn.textContent = '一括実行';
+        execBtn.textContent = '実行';
         updateExecBtn();
       }
     });
@@ -806,7 +1133,7 @@
     function processMokumei(bytes, yearMonth) {
       const { wb } = readWorkbook(bytes);
       const ws = wb.Sheets[wb.SheetNames[0]];
-      if (!ws['!ref']) throw new Error('科目明細ソースファイルにデータがありません。');
+      if (!ws['!ref']) throw new Error('仕訳明細の単月ファイルにデータがありません。');
 
       // U~X列 (idx 20-23) 削除 → A~J列 (idx 0-9) 削除
       wsDeleteCols(ws, 20, 23);
@@ -878,6 +1205,13 @@
           const prj = jv.substr(0, 5);
           setCellStr(ws, R, 11, pf);
           setCellStr(ws, R, 12, prj);
+          // KA/KO → L・M列を赤でマーク
+          if (isKA) {
+            const lAddr = XLSX.utils.encode_cell({ r: R, c: 11 });
+            const mAddr = XLSX.utils.encode_cell({ r: R, c: 12 });
+            if (ws[lAddr]) ws[lAddr]._color = 'FF0000';
+            if (ws[mAddr]) ws[mAddr]._color = 'FF0000';
+          }
         }
       }
 
@@ -898,8 +1232,8 @@
       const srcWs  = mokumeiWb.Sheets[mokumeiWb.SheetNames[0]];
       const dstWs  = jishoWb.Sheets[jishoWb.SheetNames[0]];
 
-      if (!srcWs['!ref']) throw new Error('科目明細処理結果が空です。');
-      if (!dstWs['!ref']) throw new Error('仕訳累計ファイルにデータがありません。');
+      if (!srcWs['!ref']) throw new Error('仕訳明細の処理結果が空です。');
+      if (!dstWs['!ref']) throw new Error('仕訳明細累計ファイルにデータがありません。');
 
       const srcRange = XLSX.utils.decode_range(srcWs['!ref']);
       const dstRange = XLSX.utils.decode_range(dstWs['!ref']);
@@ -926,6 +1260,8 @@
             const c = cleanCellForCopy(srcCell);
             // 仕訳累計のスタイル(フォント)を継承
             if (colStyles[C] !== undefined) c.s = colStyles[C];
+            // 科目明細側でマークした色フラグを引き継ぐ
+            if (srcCell._color) c._color = srcCell._color;
             dstWs[dstAddr] = c;
           } else {
             delete dstWs[dstAddr];
@@ -953,14 +1289,14 @@
             const lvAbv = getCellVal(dstWs, R - 1, 11);
             const mvAbv = getCellVal(dstWs, R - 1, 12);
             if (lvAbv !== '' && mvAbv !== '') {
-              // setCellStrではなくセル型を保持してコピー
+              // setCellStrではなくセル型を保持してコピー＋水色マーク
               if (lv === '') {
                 const abvCell = dstWs[XLSX.utils.encode_cell({ r: R - 1, c: 11 })];
-                if (abvCell) dstWs[XLSX.utils.encode_cell({ r: R, c: 11 })] = { t: abvCell.t, v: abvCell.v };
+                if (abvCell) dstWs[XLSX.utils.encode_cell({ r: R, c: 11 })] = { t: abvCell.t, v: abvCell.v, _color: '00FFFF' };
               }
               if (mv === '') {
                 const abvCell = dstWs[XLSX.utils.encode_cell({ r: R - 1, c: 12 })];
-                if (abvCell) dstWs[XLSX.utils.encode_cell({ r: R, c: 12 })] = { t: abvCell.t, v: abvCell.v };
+                if (abvCell) dstWs[XLSX.utils.encode_cell({ r: R, c: 12 })] = { t: abvCell.t, v: abvCell.v, _color: '00FFFF' };
               }
             }
           }
@@ -987,6 +1323,111 @@
       }
 
       return jishoWb;
+    }
+
+    // =====================================================
+    // 色フラグ収集: _color プロパティが付いたセルのアドレスと色を返す
+    // =====================================================
+    function collectColoredCells(wb) {
+      const colored = [];
+      wb.SheetNames.forEach(name => {
+        const ws = wb.Sheets[name];
+        if (!ws || !ws['!ref']) return;
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r; R <= range.e.r; R++) {
+          for (let C = range.s.c; C <= range.e.c; C++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = ws[addr];
+            if (cell && cell._color) colored.push({ addr, color: cell._color });
+          }
+        }
+      });
+      return colored;
+    }
+
+    // =====================================================
+    // JSZipでxlsxのXMLを直接編集して背景色を適用
+    //   styles.xml : 赤・水色・オレンジのfill + xfエントリを追加
+    //   sheet1.xml : 対象セルに s="N" 属性を付与
+    // JSZip未ロードまたは例外発生時は元バイト列をそのまま返す（フォールバック）
+    // =====================================================
+    async function applyColors(xlsxBytes, coloredCells) {
+      if (!coloredCells.length) return xlsxBytes;
+      if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
+        console.warn('JSZip が未ロードのため色付けをスキップ');
+        return xlsxBytes;
+      }
+
+      console.log('[DEBUG] JSZip.loadAsync 開始');
+      const zip = await JSZip.loadAsync(xlsxBytes.buffer ?? xlsxBytes);
+      console.log('[DEBUG] JSZip.loadAsync 完了');
+
+      // ── styles.xml ──────────────────────────────────
+      console.log('[DEBUG] styles.xml 読み込み開始');
+      let stylesXml = await zip.file('xl/styles.xml').async('string');
+      console.log('[DEBUG] styles.xml 読み込み完了');
+
+      // fills セクションに赤・水色・オレンジを追加
+      const fillsCountMatch = stylesXml.match(/<fills count="(\d+)"/);
+      const fillsCount = fillsCountMatch ? +fillsCountMatch[1] : 2;
+      const FILL_DEFS = [
+        { color: 'FF0000', id: fillsCount },
+        { color: '00FFFF', id: fillsCount + 1 },
+        { color: 'FFA500', id: fillsCount + 2 },
+      ];
+      const newFills = FILL_DEFS.map(f =>
+        `<fill><patternFill patternType="solid"><fgColor rgb="FF${f.color}"/><bgColor indexed="64"/></patternFill></fill>`
+      ).join('');
+      stylesXml = stylesXml
+        .replace(/<fills count="\d+"/, `<fills count="${fillsCount + 3}"`)
+        .replace('</fills>', newFills + '</fills>');
+
+      // cellXfs セクションに対応 xf エントリを追加
+      const xfsCountMatch = stylesXml.match(/<cellXfs count="(\d+)"/);
+      const xfsCount = xfsCountMatch ? +xfsCountMatch[1] : 1;
+      const XF_DEFS = FILL_DEFS.map((f, i) => ({
+        color: f.color, fillId: f.id, xfIdx: xfsCount + i
+      }));
+      const newXfs = XF_DEFS.map(x =>
+        `<xf numFmtId="0" fontId="0" fillId="${x.fillId}" borderId="0" xfId="0" applyFill="1"/>`
+      ).join('');
+      stylesXml = stylesXml
+        .replace(/<cellXfs count="\d+"/, `<cellXfs count="${xfsCount + 3}"`)
+        .replace('</cellXfs>', newXfs + '</cellXfs>');
+
+      zip.file('xl/styles.xml', stylesXml);
+      console.log('[DEBUG] styles.xml 更新完了');
+
+      // ── sheet1.xml ──────────────────────────────────
+      console.log('[DEBUG] sheet1.xml 読み込み開始');
+      let sheet1Xml = await zip.file('xl/worksheets/sheet1.xml').async('string');
+      console.log('[DEBUG] sheet1.xml 読み込み完了 サイズ:', sheet1Xml.length);
+
+      // color→xfIdx のルックアップマップ（1回のパスで全セルを処理するため）
+      const colorToXfIdx = {};
+      const addrToSIdx = new Map();
+      XF_DEFS.forEach(x => { colorToXfIdx[x.color] = x.xfIdx; });
+      for (const { addr, color } of coloredCells) {
+        const sIdx = colorToXfIdx[color];
+        if (sIdx !== undefined) addrToSIdx.set(addr, sIdx);
+      }
+
+      // sheet1.xml を1回だけ走査して該当セルに s="N" を付与（セル数×ファイルサイズの多重ループを回避）
+      console.log('[DEBUG] セル色付け置換 開始');
+      sheet1Xml = sheet1Xml.replace(/<c r="([^"]+)"([^>]*)>/g, (match, addr, attrs) => {
+        const sIdx = addrToSIdx.get(addr);
+        if (sIdx === undefined) return match;
+        const cleanAttrs = attrs.replace(/\s*s="\d+"/, '');
+        return `<c r="${addr}"${cleanAttrs} s="${sIdx}">`;
+      });
+
+      zip.file('xl/worksheets/sheet1.xml', sheet1Xml);
+      console.log('[DEBUG] セル色付け置換 完了');
+
+      console.log('[DEBUG] zip.generateAsync 開始');
+      const result = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+      console.log('[DEBUG] zip.generateAsync 完了');
+      return result;
     }
 
     // =====================================================
@@ -1028,6 +1469,11 @@
             if (m.e !== '' && m.c !== '' && jv.includes(m.e) && dv.includes(m.c)) {
               setCellStr(jishoWs, R, 11, m.a);
               setCellStr(jishoWs, R, 12, m.b);
+              // マスタ照合で設定 → オレンジでマーク
+              const lAddr = XLSX.utils.encode_cell({ r: R, c: 11 });
+              const mAddr = XLSX.utils.encode_cell({ r: R, c: 12 });
+              if (jishoWs[lAddr]) jishoWs[lAddr]._color = 'FFA500';
+              if (jishoWs[mAddr]) jishoWs[mAddr]._color = 'FFA500';
               break;
             }
           }
@@ -1035,6 +1481,780 @@
       }
 
       return jishoWb;
+    }
+
+    // =====================================================
+    // タブ切り替え
+    // =====================================================
+    function switchTab(n) {
+      [1, 2, 3].forEach(i => {
+        document.getElementById('panel' + i).style.display = i === n ? 'block' : 'none';
+        document.getElementById('tab' + i).className = i === n
+          ? 'flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition-colors'
+          : 'flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors';
+      });
+    }
+
+    // =====================================================
+    // Card 3: 投資実績 UI
+    // =====================================================
+    const toushiDateInput     = document.getElementById('toushiDateInput');
+    const toushiTemplateInput = document.getElementById('toushiTemplateInput');
+    const toushiTemplateLabel = document.getElementById('toushiTemplateLabel');
+    const toushiJishoInput    = document.getElementById('toushiJishoInput');
+    const toushiJishoLabel    = document.getElementById('toushiJishoLabel');
+    const toushiSantaiInput   = document.getElementById('toushiSantaiInput');
+    const toushiSantaiLabel   = document.getElementById('toushiSantaiLabel');
+    const toushiExecBtn       = document.getElementById('toushiExecBtn');
+    const toushiProgress      = document.getElementById('toushiProgress');
+    const toushiSuccess       = document.getElementById('toushiSuccess');
+    const toushiSuccessDetail = document.getElementById('toushiSuccessDetail');
+    const toushiError         = document.getElementById('toushiError');
+    const toushiErrorMsg      = document.getElementById('toushiErrorMsg');
+    const toushiDownloadArea  = document.getElementById('toushiDownloadArea');
+    const dlToushi            = document.getElementById('dlToushi');
+
+    let toushiTemplateFile = null, toushiJishoFile = null, toushiSantaiFile = null;
+
+    function updateToushiBtn() {
+      toushiExecBtn.disabled = !(toushiTemplateFile && toushiJishoFile && toushiSantaiFile && toushiDateInput.value);
+    }
+
+    toushiTemplateInput.addEventListener('change', e => {
+      if (e.target.files[0]) { toushiTemplateFile = e.target.files[0]; toushiTemplateLabel.textContent = toushiTemplateFile.name; toushiTemplateLabel.classList.replace('text-slate-400','text-slate-700'); }
+      updateToushiBtn();
+    });
+    toushiJishoInput.addEventListener('change', e => {
+      if (e.target.files[0]) { toushiJishoFile = e.target.files[0]; toushiJishoLabel.textContent = toushiJishoFile.name; toushiJishoLabel.classList.replace('text-slate-400','text-slate-700'); }
+      updateToushiBtn();
+    });
+    toushiSantaiInput.addEventListener('change', e => {
+      if (e.target.files[0]) { toushiSantaiFile = e.target.files[0]; toushiSantaiLabel.textContent = toushiSantaiFile.name; toushiSantaiLabel.classList.replace('text-slate-400','text-slate-700'); }
+      updateToushiBtn();
+    });
+    toushiDateInput.addEventListener('change', updateToushiBtn);
+
+    setupFileDrop(document.getElementById('toushiTemplateRow'), f => { toushiTemplateFile = f; toushiTemplateLabel.textContent = f.name; toushiTemplateLabel.classList.replace('text-slate-400','text-slate-700'); updateToushiBtn(); });
+    setupFileDrop(document.getElementById('toushiJishoRow'),    f => { toushiJishoFile    = f; toushiJishoLabel.textContent    = f.name; toushiJishoLabel.classList.replace('text-slate-400','text-slate-700');    updateToushiBtn(); });
+    setupFileDrop(document.getElementById('toushiSantaiRow'),   f => { toushiSantaiFile   = f; toushiSantaiLabel.textContent   = f.name; toushiSantaiLabel.classList.replace('text-slate-400','text-slate-700');   updateToushiBtn(); });
+
+    function setToushiStep(n, state) {
+      const icon = document.getElementById('toushiStep' + n + 'Icon');
+      const row  = document.getElementById('toushiStep' + n + 'Row');
+      if (state === 'active') {
+        icon.textContent = '▶';
+        row.classList.remove('text-slate-400', 'text-slate-500');
+        row.classList.add('text-slate-800');
+      } else if (state === 'done') {
+        icon.textContent = '✓';
+        row.classList.remove('text-slate-800', 'text-slate-400', 'text-slate-500');
+        row.classList.add('text-emerald-600');
+      }
+    }
+
+    function resetToushi() {
+      toushiSuccess.style.display = 'none';
+      toushiError.style.display = 'none';
+      toushiDownloadArea.style.display = 'none';
+      toushiProgress.style.display = 'none';
+      if (dlToushi._objUrl) { URL.revokeObjectURL(dlToushi._objUrl); dlToushi._objUrl = null; }
+    }
+
+    toushiExecBtn.addEventListener('click', async () => {
+      if (!toushiTemplateFile || !toushiJishoFile || !toushiSantaiFile || !toushiDateInput.value) return;
+      toushiExecBtn.disabled = true;
+      toushiExecBtn.textContent = '処理中...';
+      resetToushi();
+      toushiProgress.style.display = 'block';
+
+      try {
+        const templateBytes = new Uint8Array(await toushiTemplateFile.arrayBuffer());
+        const keihiBytes    = new Uint8Array(await toushiJishoFile.arrayBuffer());
+        const santaiBytes   = new Uint8Array(await toushiSantaiFile.arrayBuffer());
+
+        const { wb: destWb } = readWorkbook(templateBytes);
+        const { wb: refWb  } = readWorkbook(templateBytes);
+        const { wb: keihiWb  } = readWorkbook(keihiBytes);
+        const { wb: santaiWb } = readWorkbook(santaiBytes);
+
+        // Step 1: 経費発生（L列1-5）
+        setToushiStep(1, 'active'); await tick();
+        clearSheetRows(destWb, '経費発生');
+        const keihiCellFills = (typeof JSZip !== 'undefined' && typeof JSZip.loadAsync === 'function')
+          ? await extractCellFillsFromKeihi(keihiBytes) : {};
+        copyKeihiData(keihiWb, destWb, '経費発生', keihiCellFills);
+        setToushiStep(1, 'done');
+
+        // Step 2: 投資発生（年度内の資本化日付）
+        setToushiStep(2, 'active'); await tick();
+        const { startSerial, endSerial } = toushiFiscalYear(toushiDateInput.value);
+        clearSheetRows(destWb, '投資発生');
+        copyInvestmentRows(santaiWb, destWb, '投資発生',
+          ['工具器具及び備品', 'ソフトウェア', '建物付属設備', '建物付属設備　　　　'],
+          startSerial, endSerial);
+        sortADescHAsc(destWb, '投資発生');
+        setToushiStep(2, 'done');
+
+        // Step 3: 建仮（日付フィルタなし）
+        setToushiStep(3, 'active'); await tick();
+        clearSheetRows(destWb, '建仮');
+        copyInvestmentRows(santaiWb, destWb, '建仮',
+          ['建設仮勘定', '建設仮勘定（ソフトウェア）'], null, null);
+        sortADescHAsc(destWb, '建仮');
+        setToushiStep(3, 'done');
+
+        // Step 4: 前回データと照合・更新
+        setToushiStep(4, 'active'); await tick();
+        updateToushiHoldings(destWb, refWb);
+        updateKenkaHoldings(destWb, refWb);
+        setToushiStep(4, 'done');
+
+        const output = await generateOutputUsingTemplate(templateBytes, destWb);
+
+        const [outYr, outMo] = toushiDateInput.value.split('-').map(Number);
+        const outName = `投資実績_${outYr}年${outMo}月度.xlsx`;
+        const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        dlToushi._objUrl = url; dlToushi.href = url; dlToushi.download = outName;
+        toushiSuccessDetail.textContent = `${outName} を生成しました`;
+        toushiSuccess.style.display = 'flex';
+        toushiDownloadArea.style.display = 'block';
+
+      } catch (e) {
+        toushiErrorMsg.textContent = '処理エラー: ' + e.message;
+        toushiError.style.display = 'flex';
+      } finally {
+        toushiExecBtn.disabled = false;
+        toushiExecBtn.textContent = '実行';
+        updateToushiBtn();
+      }
+    });
+
+    // =====================================================
+    // Card 3 ヘルパー関数
+    // =====================================================
+
+    // シートのデータ行(1行目以降)をクリア、ヘッダー行は保持
+    function clearSheetRows(wb, sheetName) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws || !ws['!ref']) throw new Error(`シート「${sheetName}」が見つかりません。テンプレートファイルを確認してください。`);
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; R++)
+        for (let C = range.s.c; C <= range.e.c; C++)
+          delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: range.e.c } });
+    }
+
+    // セルをExcel日付シリアルに変換（変換不可はnull）
+    function cellToDateSerial(cell) {
+      if (!cell) return null;
+      if (cell.t === 'n') {
+        const v = cell.v;
+        if (Number.isInteger(v) && v >= 19000101 && v <= 20991231) {
+          const yr = Math.floor(v/10000), mo = Math.floor((v%10000)/100), dy = v%100;
+          return (Date.UTC(yr, mo-1, dy) - Date.UTC(1899,11,30)) / 86400000;
+        }
+        return v;
+      }
+      if (cell.t === 'd' && cell.v instanceof Date) {
+        const d = cell.v;
+        return (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+      }
+      if (cell.t === 's' && /^\d{8}$/.test(String(cell.v))) {
+        const s = String(cell.v);
+        return (Date.UTC(+s.substr(0,4), +s.substr(4,2)-1, +s.substr(6,2)) - Date.UTC(1899,11,30)) / 86400000;
+      }
+      return null;
+    }
+
+    // 月度（YYYY-MM）から年度（4月始まり）の開始・終了シリアルを計算
+    function toushiFiscalYear(dateStr) {
+      const [yr, mo] = dateStr.split('-').map(Number);
+      const fyYear = mo < 4 ? yr - 1 : yr;
+      return {
+        startSerial: (Date.UTC(fyYear,   3,  1) - Date.UTC(1899,11,30)) / 86400000,
+        endSerial:   (Date.UTC(fyYear+1, 2, 31) - Date.UTC(1899,11,30)) / 86400000,
+      };
+    }
+
+    // 仕訳累計ZIPの各セル背景色を (row,col)→argb マップとして返す
+    async function extractCellFillsFromKeihi(keihiBytes) {
+      try {
+        const zip = await JSZip.loadAsync(keihiBytes.buffer ?? keihiBytes);
+        const stylesFile = zip.file('xl/styles.xml');
+        if (!stylesFile) return {};
+        const stylesXml = await stylesFile.async('string');
+
+        // fills: index → argb (solid のみ)
+        const fillArgbs = [];
+        const fillRe = /<fill>([\s\S]*?)<\/fill>/g;
+        let fm;
+        while ((fm = fillRe.exec(stylesXml)) !== null) {
+          const inner = fm[1];
+          if (/patternType="solid"/.test(inner)) {
+            const fgM = inner.match(/\bfgColor\b[^>]*\brgb="([0-9A-Fa-f]{6,8})"/);
+            fillArgbs.push(fgM ? fgM[1].toUpperCase() : null);
+          } else {
+            fillArgbs.push(null);
+          }
+        }
+
+        // cellXfs: index → fillId
+        const cellXfsM  = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+        const xfFillIds = [];
+        if (cellXfsM) {
+          const xfRe = /<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g;
+          let xm;
+          while ((xm = xfRe.exec(cellXfsM[1])) !== null) {
+            const fM = xm[0].match(/\bfillId="(\d+)"/);
+            xfFillIds.push(fM ? parseInt(fM[1]) : 0);
+          }
+        }
+
+        // シートXMLから (row,col) → argb を構築
+        const sheetPaths = await getSheetPaths(zip);
+        const firstPath  = Object.values(sheetPaths)[0];
+        if (!firstPath || !zip.file(firstPath)) return {};
+        const sheetXml   = await zip.file(firstPath).async('string');
+
+        const cellFillMap = {};
+        const cellRe = /<c\b([^>]*)>/g;
+        let cm;
+        while ((cm = cellRe.exec(sheetXml)) !== null) {
+          const attrs  = cm[1];
+          const rM     = attrs.match(/\br="([A-Z]+)(\d+)"/);
+          if (!rM) continue;
+          const col    = xlColToIdx(rM[1]);
+          const row    = parseInt(rM[2]) - 1;
+          const sM     = attrs.match(/\bs="(\d+)"/);
+          if (!sM) continue;
+          const fillId = xfFillIds[parseInt(sM[1])];
+          if (!fillId || fillId <= 1) continue;
+          const argb   = fillArgbs[fillId];
+          if (argb) cellFillMap[`${row},${col}`] = argb;
+        }
+        return cellFillMap;
+      } catch (e) {
+        console.warn('仕訳累計の色情報取得に失敗:', e);
+        return {};
+      }
+    }
+
+    // 仕訳累計からL列(idx11)が1-5の行を経費発生シートへコピー
+    function copyKeihiData(srcWb, destWb, sheetName, cellFillMap = {}) {
+      const srcWs  = srcWb.Sheets[srcWb.SheetNames[0]];
+      const destWs = destWb.Sheets[sheetName];
+      if (!srcWs || !destWs) throw new Error('経費発生データのコピーに失敗しました。');
+      const srcRange = XLSX.utils.decode_range(srcWs['!ref']);
+      const templateMaxCol = XLSX.utils.decode_range(destWs['!ref']).e.c;
+      let destRow = 1;
+      for (let R = 1; R <= srcRange.e.r; R++) {
+        const lCell = srcWs[XLSX.utils.encode_cell({ r: R, c: 11 })];
+        if (!lCell) continue;
+        const lv = lCell.t === 'n' ? lCell.v : (lCell.t === 's' ? Number(lCell.v) : NaN);
+        if (isNaN(lv) || lv < 1 || lv > 5) continue;
+        for (let C = srcRange.s.c; C <= srcRange.e.c; C++) {
+          const cell = srcWs[XLSX.utils.encode_cell({ r: R, c: C })];
+          const destAddr = XLSX.utils.encode_cell({ r: destRow, c: C });
+          if (cell) {
+            const c = cleanCellForCopy(cell);
+            const argb = cellFillMap[`${R},${C}`];
+            if (argb) c._fillRgb = argb;
+            destWs[destAddr] = c;
+          } else {
+            delete destWs[destAddr];
+          }
+        }
+        destRow++;
+      }
+      destWs['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:Math.max(0,destRow-1), c:Math.max(srcRange.e.c, templateMaxCol)} });
+    }
+
+    // 資産台帳からA列キー+日付範囲でフィルタしてシートへコピー（startSerial=nullで日付フィルタなし）
+    function copyInvestmentRows(srcWb, destWb, sheetName, accountKeys, startSerial, endSerial) {
+      const srcWs  = srcWb.Sheets[srcWb.SheetNames[0]];
+      const destWs = destWb.Sheets[sheetName];
+      if (!srcWs || !destWs) throw new Error(`シート「${sheetName}」へのコピーに失敗しました。`);
+      const keySet = new Set(accountKeys);
+      const srcRange = XLSX.utils.decode_range(srcWs['!ref']);
+      const templateMaxCol = XLSX.utils.decode_range(destWs['!ref']).e.c;
+      let destRow = 1;
+      for (let R = 1; R <= srcRange.e.r; R++) {
+        const aCell = srcWs[XLSX.utils.encode_cell({ r: R, c: 0 })];
+        if (!aCell || !keySet.has(String(aCell.v ?? ''))) continue;
+        if (startSerial !== null) {
+          const hSerial = cellToDateSerial(srcWs[XLSX.utils.encode_cell({ r: R, c: 7 })]);
+          if (hSerial === null || hSerial < startSerial || hSerial > endSerial) continue;
+        }
+        for (let C = srcRange.s.c; C <= srcRange.e.c; C++) {
+          const cell = srcWs[XLSX.utils.encode_cell({ r: R, c: C })];
+          const destAddr = XLSX.utils.encode_cell({ r: destRow, c: C });
+          if (cell) destWs[destAddr] = cleanCellForCopy(cell); else delete destWs[destAddr];
+        }
+        destRow++;
+      }
+      destWs['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:Math.max(0,destRow-1), c:Math.max(srcRange.e.c, templateMaxCol)} });
+    }
+
+    // A列降順・H列昇順ソート
+    function sortADescHAsc(wb, sheetName) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws || !ws['!ref']) return;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      if (range.e.r < 1) return;
+      const numCols = range.e.c + 1;
+      const rows = [];
+      for (let R = 1; R <= range.e.r; R++) {
+        const row = [];
+        for (let C = 0; C < numCols; C++) row.push(ws[XLSX.utils.encode_cell({ r: R, c: C })] || null);
+        rows.push(row);
+      }
+      rows.sort((a, b) => {
+        const av = a[0] ? (a[0].v ?? '') : '', bv = b[0] ? (b[0].v ?? '') : '';
+        if (av > bv) return -1; if (av < bv) return 1;
+        const ah = a[7] ? (a[7].v ?? '') : '', bh = b[7] ? (b[7].v ?? '') : '';
+        return ah < bh ? -1 : ah > bh ? 1 : 0;
+      });
+      for (let R = 0; R < rows.length; R++)
+        for (let C = 0; C < numCols; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R+1, c: C });
+          if (rows[R][C]) ws[addr] = rows[R][C]; else delete ws[addr];
+        }
+      delete ws['!rows'];
+    }
+
+    // 投資発生シート: D列(idx3)で照合 → I(8)/L(11)/M(12)列を前回から引き継ぎ or リセット
+    function updateToushiHoldings(destWb, refWb) {
+      const destWs = destWb.Sheets['投資発生'];
+      const refWs  = refWb.Sheets['投資発生'];
+      if (!destWs || !refWs || !destWs['!ref'] || !refWs['!ref']) return;
+      const refRange = XLSX.utils.decode_range(refWs['!ref']);
+      const refMap = new Map();
+      for (let R = 1; R <= refRange.e.r; R++) {
+        const d = refWs[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (d && d.v != null && d.v !== '' && !refMap.has(String(d.v))) refMap.set(String(d.v), R);
+      }
+      const destRange = XLSX.utils.decode_range(destWs['!ref']);
+      for (let R = 1; R <= destRange.e.r; R++) {
+        const dCell = destWs[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (!dCell || dCell.v == null || dCell.v === '') continue;
+        const key = String(dCell.v);
+        if (refMap.has(key)) {
+          const refR = refMap.get(key);
+          [8, 11, 12].forEach(C => {
+            const refCell = refWs[XLSX.utils.encode_cell({ r: refR, c: C })];
+            const destAddr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (refCell) destWs[destAddr] = cleanCellForCopy(refCell); else delete destWs[destAddr];
+          });
+        } else {
+          destWs[XLSX.utils.encode_cell({ r: R, c: 11 })] = { t: 's', v: '', _highlight: 'yellow' };
+          destWs[XLSX.utils.encode_cell({ r: R, c: 12 })] = { t: 's', v: '', _highlight: 'yellow' };
+          const hSerial = cellToDateSerial(destWs[XLSX.utils.encode_cell({ r: R, c: 7 })]);
+          if (hSerial !== null) {
+            const d = new Date(Date.UTC(1899,11,30) + hSerial * 86400000);
+            const first = (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) - Date.UTC(1899,11,30)) / 86400000;
+            destWs[XLSX.utils.encode_cell({ r: R, c: 8 })] = { t:'n', v:first, z:'yyyy/mm/dd' };
+          }
+        }
+      }
+    }
+
+    // 建仮シート: D列(idx3)で照合 → G列(idx6)引き継ぎ、AH列(idx33)=0なら"精算済"
+    function updateKenkaHoldings(destWb, refWb) {
+      const destWs = destWb.Sheets['建仮'];
+      const refWs  = refWb.Sheets['建仮'];
+      if (!destWs || !refWs || !destWs['!ref'] || !refWs['!ref']) return;
+      const refRange = XLSX.utils.decode_range(refWs['!ref']);
+      const refMap = new Map();
+      for (let R = 1; R <= refRange.e.r; R++) {
+        const d = refWs[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (d && d.v != null && d.v !== '') {
+          const g = refWs[XLSX.utils.encode_cell({ r: R, c: 6 })];
+          refMap.set(String(d.v), g ? g.v : '');
+        }
+      }
+      const destRange = XLSX.utils.decode_range(destWs['!ref']);
+      for (let R = 1; R <= destRange.e.r; R++) {
+        const dCell = destWs[XLSX.utils.encode_cell({ r: R, c: 3 })];
+        if (!dCell || dCell.v == null || dCell.v === '') continue;
+        const key = String(dCell.v);
+        const gAddr = XLSX.utils.encode_cell({ r: R, c: 6 });
+        if (refMap.has(key)) {
+          const gv = refMap.get(key);
+          if (gv != null && gv !== '') destWs[gAddr] = { t: typeof gv === 'number' ? 'n' : 's', v: gv };
+          else delete destWs[gAddr];
+        } else {
+          destWs[gAddr] = { t: 's', v: '', _highlight: 'yellow' };
+        }
+        const ahCell = destWs[XLSX.utils.encode_cell({ r: R, c: 33 })];
+        const curG = destWs[gAddr] ? String(destWs[gAddr].v) : '';
+        if (ahCell && ahCell.v === 0 && curG !== '精算済') destWs[gAddr] = { t:'s', v:'精算済', _highlight: 'red' };
+      }
+    }
+
+    // =====================================================
+    // Card 3 出力: テンプレートZIPを直接編集して書式を完全保持
+    // =====================================================
+
+    // xl/workbook.xml + xl/_rels/workbook.xml.rels → シート名→xmlパスのマップ
+    async function getSheetPaths(zip) {
+      const wbXml   = await zip.file('xl/workbook.xml').async('string');
+      const relsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+      const rIdToName = {};
+      let m;
+      const sheetRe = /<sheet\b([^>]*)>/g;
+      while ((m = sheetRe.exec(wbXml)) !== null) {
+        const attrs = m[1];
+        const nm = (attrs.match(/\bname="([^"]*)"/) || [])[1];
+        const id = (attrs.match(/\br:id="([^"]*)"/)  || [])[1];
+        if (nm && id) rIdToName[id] = nm;
+      }
+      const rIdToTarget = {};
+      const relRe = /<Relationship\b([^>]*)>/g;
+      while ((m = relRe.exec(relsXml)) !== null) {
+        const attrs = m[1];
+        const id  = (attrs.match(/\bId="([^"]*)"/)     || [])[1];
+        const tgt = (attrs.match(/\bTarget="([^"]*)"/) || [])[1];
+        if (id && tgt) rIdToTarget[id] = tgt;
+      }
+      const result = {};
+      for (const [rId, name] of Object.entries(rIdToName)) {
+        const t = rIdToTarget[rId];
+        if (t) result[name] = t.startsWith('/') ? t.slice(1) : `xl/${t}`;
+      }
+      return result;
+    }
+
+    // シートXMLのデータ行(r>=2)から 列インデックス→スタイルindex を収集
+    function extractColStylesFromXml(sheetXml) {
+      const colStyles = {};
+      const re = /<c\b([^>]*)>/g;
+      let m;
+      while ((m = re.exec(sheetXml)) !== null) {
+        const attrs = m[1];
+        const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
+        if (!rM || parseInt(rM[2]) < 2) continue;
+        const sM = attrs.match(/\bs="(\d+)"/);
+        if (sM) {
+          const c = xlColToIdx(rM[1]);
+          if (!(c in colStyles)) colStyles[c] = parseInt(sM[1]);
+        }
+      }
+      return colStyles;
+    }
+
+    function xlColToIdx(letters) {
+      let idx = 0;
+      for (const ch of letters) idx = idx * 26 + (ch.charCodeAt(0) - 64);
+      return idx - 1;
+    }
+
+    function xlIdxToCol(n) {
+      let s = ''; n++;
+      while (n > 0) { s = String.fromCharCode(64 + ((n-1)%26+1)) + s; n = Math.floor((n-1)/26); }
+      return s;
+    }
+
+    // SheetJSワークシートのデータ行(R>=1)をXML row文字列に変換
+    function generateDataRowsXml(ws, colStyles, highlightXfs = {}, clearFillMap = {}, rgbToXfIdx = {}) {
+      if (!ws || !ws['!ref']) return '';
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const rows = [];
+      for (let R = 1; R <= range.e.r; R++) {
+        const xmlRow = R + 1; // header=1, data starts at 2
+        const cells = [];
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell || ((cell.v == null || cell.v === '') && !cell._highlight && !cell._fillRgb)) continue;
+          const ref  = `${xlIdxToCol(C)}${xmlRow}`;
+          let sIdx;
+          if (cell._highlight && highlightXfs[cell._highlight] !== undefined) {
+            sIdx = highlightXfs[cell._highlight];
+          } else if (cell._fillRgb && rgbToXfIdx[cell._fillRgb] !== undefined) {
+            sIdx = rgbToXfIdx[cell._fillRgb];
+          } else {
+            const origIdx = colStyles[C];
+            sIdx = origIdx !== undefined ? (clearFillMap[origIdx] ?? origIdx) : undefined;
+          }
+          const sAttr = sIdx !== undefined ? ` s="${sIdx}"` : '';
+          const xml  = sheetCellToXml(cell, ref, sAttr);
+          if (xml) cells.push(xml);
+        }
+        if (cells.length) rows.push(`<row r="${xmlRow}">${cells.join('')}</row>`);
+      }
+      return rows.join('');
+    }
+
+    function sheetCellToXml(cell, ref, sAttr) {
+      if (cell.t === 'n') return `<c r="${ref}"${sAttr}><v>${cell.v}</v></c>`;
+      if (cell.t === 'd' && cell.v instanceof Date) {
+        const d = cell.v;
+        const s = (Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+        return `<c r="${ref}"${sAttr}><v>${s}</v></c>`;
+      }
+      if (cell.t === 's' || cell.t === 'str') {
+        const v = String(cell.v ?? '');
+        if (!v) return sAttr ? `<c r="${ref}"${sAttr}/>` : '';
+        const esc = v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<c r="${ref}" t="inlineStr"${sAttr}><is><t>${esc}</t></is></c>`;
+      }
+      if (cell.t === 'b') return `<c r="${ref}" t="b"${sAttr}><v>${cell.v?1:0}</v></c>`;
+      return '';
+    }
+
+    // sheetData 内のデータ行を差し替え。ヘッダー行 r="1" は保持
+    function replaceSheetDataRows(sheetXml, newRowsXml) {
+      if (/<sheetData\s*\/>/.test(sheetXml)) {
+        return sheetXml.replace(/<sheetData\s*\/>/, `<sheetData>${newRowsXml}</sheetData>`);
+      }
+      return sheetXml.replace(
+        /(<sheetData[^>]*>)([\s\S]*?)(<\/sheetData>)/,
+        (_, open, content, close) => {
+          const hdr = (content.match(/<row\b[^>]*\br="1"[^>]*>[\s\S]*?<\/row>/) || [''])[0];
+          return `${open}${hdr}${newRowsXml}${close}`;
+        }
+      );
+    }
+
+    // styles.xmlに黄・赤fillを追加し、既存スタイルの背景色クリアcloneを生成
+    function addHighlightStyles(stylesXml, baseYellowXfIdx, baseRedXfIdx, usedXfIdxs, extraArgbs = []) {
+      const cellXfsM      = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const cellXfsContent = cellXfsM ? cellXfsM[1] : '';
+
+      const getXf = (idx) => {
+        const re = /<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g;
+        let i = 0, m;
+        while ((m = re.exec(cellXfsContent)) !== null) { if (i++ === idx) return m[0]; }
+        return null;
+      };
+      const fallback = '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+      const cloneWithFill = (xfXml, fillId, applyVal) => {
+        let s = xfXml;
+        s = /\bfillId="/.test(s) ? s.replace(/\bfillId="\d+"/, `fillId="${fillId}"`) : s.replace('<xf', `<xf fillId="${fillId}"`);
+        s = /\bapplyFill="/.test(s) ? s.replace(/\bapplyFill="\w+"/, `applyFill="${applyVal}"`) : s.replace('<xf', `<xf applyFill="${applyVal}"`);
+        return s;
+      };
+
+      // 追加する fill: 黄・赤 + 仕訳累計由来の色（重複排除）
+      const uniqueExtra    = [...new Set(extraArgbs.filter(Boolean))];
+      const fillCount      = (stylesXml.match(/<fill>/g) || []).length;
+      const yellowFillIdx  = fillCount;
+      const redFillIdx     = fillCount + 1;
+      const extraFillStart = fillCount + 2;
+      const extraFillIdxOf = (argb) => extraFillStart + uniqueExtra.indexOf(argb);
+
+      const allNewFills =
+        `<fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill>` +
+        `<fill><patternFill patternType="solid"><fgColor rgb="FFFF0000"/><bgColor indexed="64"/></patternFill></fill>` +
+        uniqueExtra.map(argb =>
+          `<fill><patternFill patternType="solid"><fgColor rgb="${argb}"/><bgColor indexed="64"/></patternFill></fill>`
+        ).join('');
+      let xml = stylesXml.replace('</fills>', allNewFills + '</fills>');
+      xml = xml.replace(/(<fills\b[^>]*\scount=")(\d+)"/, (_, p, n) => `${p}${+n + 2 + uniqueExtra.length}"`);
+
+      // 既存 xf 数を取得
+      const xfCount     = (cellXfsContent.match(/<xf\b/g) || []).length;
+      const yellowXfIdx = xfCount;
+      const redXfIdx    = xfCount + 1;
+
+      const yellowXf = cloneWithFill(getXf(baseYellowXfIdx) ?? fallback, yellowFillIdx, '1');
+      const redXf    = cloneWithFill(getXf(baseRedXfIdx)    ?? fallback, redFillIdx,    '1');
+
+      // 使用中 xf の背景なしクローン
+      const clearFillMap = {};
+      const noFillXfs   = [];
+      usedXfIdxs.forEach((origIdx, i) => {
+        clearFillMap[origIdx] = xfCount + 2 + i;
+        noFillXfs.push(cloneWithFill(getXf(origIdx) ?? fallback, 0, '1'));
+      });
+
+      // 仕訳累計由来色の xf エントリ
+      const rgbToXfIdx = {};
+      const extraXfs   = [];
+      uniqueExtra.forEach((argb, i) => {
+        rgbToXfIdx[argb] = xfCount + 2 + usedXfIdxs.length + i;
+        extraXfs.push(cloneWithFill(fallback, extraFillIdxOf(argb), '1'));
+      });
+
+      const totalNew = 2 + usedXfIdxs.length + uniqueExtra.length;
+      xml = xml.replace('</cellXfs>', yellowXf + redXf + noFillXfs.join('') + extraXfs.join('') + '</cellXfs>');
+      xml = xml.replace(/(<cellXfs\b[^>]*\scount=")(\d+)"/, (_, p, n) => `${p}${+n + totalNew}"`);
+
+      return { xml, yellowXfIdx, redXfIdx, clearFillMap, rgbToXfIdx };
+    }
+
+    // テンプレートZIPを直接編集して出力xlsxを生成
+    async function generateOutputUsingTemplate(templateBytes, destWb) {
+      if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
+        console.warn('JSZip未ロード → SheetJS writeにフォールバック');
+        ['経費発生','投資発生','建仮'].forEach(n=>{const ws=destWb.Sheets[n];if(ws)delete ws['!merges'];});
+        return new Uint8Array(XLSX.write(destWb, { type: 'array', bookType: 'xlsx' }));
+      }
+      const zip        = await JSZip.loadAsync(templateBytes.buffer ?? templateBytes);
+      const sheetPaths = await getSheetPaths(zip);
+      const sheetNames = ['経費発生', '投資発生', '建仮'];
+
+      // シートXMLを一括読み込み
+      const sheetXmlMap = {};
+      for (const name of sheetNames) {
+        const path = sheetPaths[name];
+        if (path && zip.file(path)) sheetXmlMap[name] = await zip.file(path).async('string');
+        else console.warn(`シート「${name}」のXMLが見つかりません`);
+      }
+
+      // 列スタイルを抽出・使用中 xf インデックスを収集
+      const colStylesMap = {};
+      const usedXfSet    = new Set();
+      for (const name of sheetNames) {
+        if (!sheetXmlMap[name]) continue;
+        const cs = extractColStylesFromXml(sheetXmlMap[name]);
+        colStylesMap[name] = cs;
+        for (const idx of Object.values(cs)) usedXfSet.add(idx);
+      }
+
+      // 経費発生セルの _fillRgb（仕訳累計由来）を収集
+      const keihiWs    = destWb.Sheets['経費発生'];
+      const extraArgbs = [];
+      if (keihiWs && keihiWs['!ref']) {
+        const kr = XLSX.utils.decode_range(keihiWs['!ref']);
+        for (let R = 1; R <= kr.e.r; R++)
+          for (let C = kr.s.c; C <= kr.e.c; C++) {
+            const cell = keihiWs[XLSX.utils.encode_cell({ r: R, c: C })];
+            if (cell && cell._fillRgb) extraArgbs.push(cell._fillRgb);
+          }
+      }
+
+      // styles.xml を修正（ハイライト色追加 + 既存背景クリア + 仕訳累計由来色追加）
+      let highlightXfs = {}, clearFillMap = {}, rgbToXfIdx = {};
+      const stylesFile = zip.file('xl/styles.xml');
+      if (stylesFile) {
+        const stylesXml  = await stylesFile.async('string');
+        const baseYellow = (colStylesMap['投資発生'] || {})[11] ?? 0;  // L列
+        const baseRed    = (colStylesMap['建仮']     || {})[6]  ?? 0;  // G列
+        const { xml: newStyles, yellowXfIdx, redXfIdx, clearFillMap: cfm, rgbToXfIdx: rtx } =
+          addHighlightStyles(stylesXml, baseYellow, baseRed, [...usedXfSet], extraArgbs);
+        zip.file('xl/styles.xml', newStyles);
+        highlightXfs = { yellow: yellowXfIdx, red: redXfIdx };
+        clearFillMap = cfm;
+        rgbToXfIdx   = rtx;
+      }
+
+      // 各シートのデータ行を差し替え（経費発生は仕訳累計由来色も適用）
+      for (const name of sheetNames) {
+        if (!sheetXmlMap[name]) continue;
+        const ws      = destWb.Sheets[name];
+        const perCell = name === '経費発生' ? rgbToXfIdx : {};
+        const xml = replaceSheetDataRows(
+          sheetXmlMap[name],
+          generateDataRowsXml(ws, colStylesMap[name] || {}, highlightXfs, clearFillMap, perCell)
+        );
+        zip.file(sheetPaths[name], xml);
+      }
+      return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+    }
+
+    // =====================================================
+    // 四半期締め用科目明細 変換処理
+    // =====================================================
+    function processQtrKamokuMeisai(bytes, yearMonthStr) {
+      const { wb } = readWorkbook(bytes);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws || !ws['!ref']) throw new Error('シートが見つかりません');
+
+      // Read all cells as 2D array (raw values, no date conversion)
+      let data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+
+      // Step 1: Delete rows 1-12 (0-based indices 0-11)
+      data = data.slice(12);
+
+      // Step 2-8: Keep only surviving columns from sequential VBA deletions
+      // VBA deletes T:AH(19-33), Q(16), L(11), J(9), F:H(5-7), C:D(2-3), A(0)
+      // Survivors (original 0-based): B(1), E(4), I(8), K(10), M(12), N(13), O(14), P(15), R(17), S(18)
+      // → new positions 0-9 (A-J)
+      const keepCols = [1, 4, 8, 10, 12, 13, 14, 15, 17, 18];
+      data = data.map(row => keepCols.map(c => (row && row[c] !== undefined ? row[c] : null)));
+
+      // Step 3: Set new J1 (pos 9) header = "金額"
+      if (data.length > 0) data[0][9] = '金額';
+
+      // Step 4: Delete data rows where E (pos 4 = orig M col) is blank or "転記日付"
+      const hdr = data[0];
+      data = [hdr, ...data.slice(1).filter(row => {
+        const v = row[4];
+        return v !== null && v !== undefined && v !== '' && String(v).trim() !== '転記日付';
+      })];
+
+      // Step 5: Where C (pos 2 = orig I) = "83130100" → A(pos0)="z99999999", B(pos1)="共通"
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][2] ?? '') === '83130100') {
+          data[i][0] = 'z99999999';
+          data[i][1] = '共通';
+        }
+      }
+
+      // Step 6: Fill down A(0), B(1), C(2), D(3) — blank cells inherit from row above
+      for (const col of [0, 1, 2, 3]) {
+        for (let i = 1; i < data.length; i++) {
+          const v = data[i][col];
+          if (v === null || v === undefined || v === '') data[i][col] = data[i - 1][col];
+        }
+      }
+
+      // Step 7: Insert new A column — "月度" header, yearSerial for data rows
+      const [yr, mo] = yearMonthStr.split('-').map(Number);
+      const yearSerial = (Date.UTC(yr, mo - 1, 1) - Date.UTC(1899, 11, 30)) / 86400000;
+      data = data.map((row, i) => [i === 0 ? '月度' : yearSerial, ...row]);
+      // Now 11 cols: A=月度, B=origB, C=origE, D=origI, E=origK, F=origM, G=origN, H=origO, I=origP, J=origR, K=origS("金額")
+
+      // Step 8: Set L1="PF", M1="案件番号" (new empty cols at pos 11, 12)
+      while (data[0].length < 13) data[0].push(null);
+      data[0][11] = 'PF';
+      data[0][12] = '案件番号';
+
+      // Step 9: Process J col (pos 9 after insert = orig R) for case number patterns
+      for (let i = 1; i < data.length; i++) {
+        while (data[i].length < 13) data[i].push(null);
+        const jv = String(data[i][9] ?? '');
+
+        // IT##-### pattern: M = first 8 chars
+        if (jv.length >= 8 &&
+            jv[0] === 'I' && jv[1] === 'T' &&
+            /\d/.test(jv[2]) && /\d/.test(jv[3]) &&
+            jv[4] === '-' &&
+            /\d/.test(jv[5]) && /\d/.test(jv[6]) && /\d/.test(jv[7])) {
+          data[i][12] = jv.slice(0, 8);
+        }
+
+        // K####-## pattern (K + 4 digits + - + 2 digits, not KA/KO)
+        const isKNum = jv[0] === 'K' &&
+            /\d/.test(jv[1]) && /\d/.test(jv[2]) && /\d/.test(jv[3]) && /\d/.test(jv[4]) &&
+            jv[5] === '-' && /\d/.test(jv[6]) && /\d/.test(jv[7]);
+
+        // KA###-## or KO###-## pattern
+        const isKAKO = jv.length >= 8 &&
+            (jv.startsWith('KA') || jv.startsWith('KO')) &&
+            /\d/.test(jv[2]) && /\d/.test(jv[3]) && /\d/.test(jv[4]) &&
+            jv[5] === '-' && /\d/.test(jv[6]) && /\d/.test(jv[7]);
+
+        if (isKNum || isKAKO) {
+          // L = PF: single digit if 7th char is "0", otherwise two digits
+          data[i][11] = jv[6] === '0' ? jv[7] : jv.slice(6, 8);
+          data[i][12] = jv.slice(0, 5);
+        }
+      }
+
+      // Build output workbook
+      const newWs = XLSX.utils.aoa_to_sheet(data);
+
+      // Apply yyyy年m月 format to A column (月度) data cells
+      for (let i = 1; i < data.length; i++) {
+        const addr = XLSX.utils.encode_cell({ r: i, c: 0 });
+        if (newWs[addr]) { newWs[addr].t = 'n'; newWs[addr].z = 'yyyy年m月'; }
+      }
+
+      const newWb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(newWb, newWs, wb.SheetNames[0]);
+      return newWb;
     }
 
   </script>
