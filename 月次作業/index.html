@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>資産管理 変換ツール</title>
+  <title>マネジメント企画部　月次作業ツール</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
@@ -867,6 +867,18 @@
       return { fmt, wb: XLSX.read(text, { type: 'string', cellNF: true }) };
     }
 
+    // 元ファイルにオートフィルタ/非表示行が残っていると転記漏れの原因になるため、
+    // 読み込み直後に全シートから除去しておく
+    function clearFilterState(wb) {
+      wb.SheetNames.forEach(name => {
+        const ws = wb.Sheets[name];
+        if (!ws) return;
+        delete ws['!autofilter'];
+        if (ws['!rows']) ws['!rows'].forEach(r => { if (r) delete r.hidden; });
+      });
+      return wb;
+    }
+
     // =====================================================
     // 共通ユーティリティ: シート操作
     // =====================================================
@@ -1576,20 +1588,22 @@
         const { wb: refWb  } = readWorkbook(templateBytes);
         const { wb: keihiWb  } = readWorkbook(keihiBytes);
         const { wb: santaiWb } = readWorkbook(santaiBytes);
+        clearFilterState(keihiWb);
+        clearFilterState(santaiWb);
 
-        // Step 1: 経費発生（L列1-5）
+        // Step 1: 経費発生（L列1-6）
         setToushiStep(1, 'active'); await tick();
         clearSheetRows(destWb, '経費発生');
         const keihiCellFills = (typeof JSZip !== 'undefined' && typeof JSZip.loadAsync === 'function')
           ? await extractCellFillsFromKeihi(keihiBytes) : {};
-        copyKeihiData(keihiWb, destWb, '経費発生', keihiCellFills);
+        const keihiResult = copyKeihiData(keihiWb, destWb, '経費発生', keihiCellFills);
         setToushiStep(1, 'done');
 
         // Step 2: 投資発生（年度内の資本化日付）
         setToushiStep(2, 'active'); await tick();
         const { startSerial, endSerial } = toushiFiscalYear(toushiDateInput.value);
         clearSheetRows(destWb, '投資発生');
-        copyInvestmentRows(santaiWb, destWb, '投資発生',
+        const toushiResult = copyInvestmentRows(santaiWb, destWb, '投資発生',
           ['工具器具及び備品', 'ソフトウェア', '建物付属設備', '建物付属設備　　　　'],
           startSerial, endSerial);
         sortADescHAsc(destWb, '投資発生');
@@ -1598,7 +1612,7 @@
         // Step 3: 建仮（日付フィルタなし）
         setToushiStep(3, 'active'); await tick();
         clearSheetRows(destWb, '建仮');
-        copyInvestmentRows(santaiWb, destWb, '建仮',
+        const kenkaResult = copyInvestmentRows(santaiWb, destWb, '建仮',
           ['建設仮勘定', '建設仮勘定（ソフトウェア）'], null, null);
         sortADescHAsc(destWb, '建仮');
         setToushiStep(3, 'done');
@@ -1616,7 +1630,10 @@
         const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = URL.createObjectURL(blob);
         dlToushi._objUrl = url; dlToushi.href = url; dlToushi.download = outName;
-        toushiSuccessDetail.textContent = `${outName} を生成しました`;
+        toushiSuccessDetail.textContent = `${outName} を生成しました`
+          + `（経費発生: 仕訳累計${keihiResult.scannedRows}行中 ${keihiResult.matchedRows}行を転記 / `
+          + `投資発生: 資産台帳${toushiResult.scannedRows}行中 ${toushiResult.matchedRows}行を転記 / `
+          + `建仮: 資産台帳${kenkaResult.scannedRows}行中 ${kenkaResult.matchedRows}行を転記）`;
         toushiSuccess.style.display = 'flex';
         toushiDownloadArea.style.display = 'block';
 
@@ -1740,7 +1757,7 @@
       }
     }
 
-    // 仕訳累計からL列(idx11)が1-5の行を経費発生シートへコピー
+    // 仕訳累計からL列(idx11)が1-6の行を経費発生シートへコピー
     function copyKeihiData(srcWb, destWb, sheetName, cellFillMap = {}) {
       const srcWs  = srcWb.Sheets[srcWb.SheetNames[0]];
       const destWs = destWb.Sheets[sheetName];
@@ -1752,7 +1769,7 @@
         const lCell = srcWs[XLSX.utils.encode_cell({ r: R, c: 11 })];
         if (!lCell) continue;
         const lv = lCell.t === 'n' ? lCell.v : (lCell.t === 's' ? Number(lCell.v) : NaN);
-        if (isNaN(lv) || lv < 1 || lv > 5) continue;
+        if (isNaN(lv) || lv < 1 || lv > 6) continue;
         for (let C = srcRange.s.c; C <= srcRange.e.c; C++) {
           const cell = srcWs[XLSX.utils.encode_cell({ r: R, c: C })];
           const destAddr = XLSX.utils.encode_cell({ r: destRow, c: C });
@@ -1768,6 +1785,7 @@
         destRow++;
       }
       destWs['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:Math.max(0,destRow-1), c:Math.max(srcRange.e.c, templateMaxCol)} });
+      return { scannedRows: srcRange.e.r, matchedRows: destRow - 1 };
     }
 
     // 資産台帳からA列キー+日付範囲でフィルタしてシートへコピー（startSerial=nullで日付フィルタなし）
@@ -1794,6 +1812,7 @@
         destRow++;
       }
       destWs['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:Math.max(0,destRow-1), c:Math.max(srcRange.e.c, templateMaxCol)} });
+      return { scannedRows: srcRange.e.r, matchedRows: destRow - 1 };
     }
 
     // A列降順・H列昇順ソート
@@ -2016,6 +2035,19 @@
       );
     }
 
+    // <dimension ref="..."/> はテンプレートの値のまま残ると行数が実データと食い違うため、
+    // 差し替え後のシート実データ範囲(ws['!ref'])で上書きする
+    function updateSheetDimension(sheetXml, refStr) {
+      if (!refStr) return sheetXml;
+      if (/<dimension\b[^>]*\/>/.test(sheetXml)) {
+        return sheetXml.replace(/<dimension\b[^>]*\/>/, `<dimension ref="${refStr}"/>`);
+      }
+      if (/<dimension\b[^>]*>[\s\S]*?<\/dimension>/.test(sheetXml)) {
+        return sheetXml.replace(/<dimension\b[^>]*>[\s\S]*?<\/dimension>/, `<dimension ref="${refStr}"/>`);
+      }
+      return sheetXml;
+    }
+
     // styles.xmlに黄・赤fillを追加し、既存スタイルの背景色クリアcloneを生成
     function addHighlightStyles(stylesXml, baseYellowXfIdx, baseRedXfIdx, usedXfIdxs, extraArgbs = []) {
       const cellXfsM      = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
@@ -2144,10 +2176,11 @@
         if (!sheetXmlMap[name]) continue;
         const ws      = destWb.Sheets[name];
         const perCell = name === '経費発生' ? rgbToXfIdx : {};
-        const xml = replaceSheetDataRows(
+        let xml = replaceSheetDataRows(
           sheetXmlMap[name],
           generateDataRowsXml(ws, colStylesMap[name] || {}, highlightXfs, clearFillMap, perCell)
         );
+        xml = updateSheetDimension(xml, ws && ws['!ref']);
         zip.file(sheetPaths[name], xml);
       }
       return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });

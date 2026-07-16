@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VBA版・Webツール版 差異チェック</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-start justify-center p-4 py-6">
+
+  <div class="w-full max-w-2xl">
+
+    <div class="mb-4">
+      <h1 class="text-lg font-bold text-slate-800">VBA版・Webツール版 差異チェック</h1>
+      <p class="text-slate-400 text-xs mt-1">※このツールはブラウザ内で処理します。ファイルの内容は外部に送信されません。</p>
+    </div>
+
+    <!-- タブ -->
+    <div class="flex gap-1 mb-3">
+      <button id="tabBtn3" class="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 text-white transition-colors">資産台帳</button>
+      <button id="tabBtn1" class="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-white text-slate-500 border border-slate-200 transition-colors">仕訳明細累計</button>
+      <button id="tabBtn2" class="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-white text-slate-500 border border-slate-200 transition-colors">投資実績</button>
+    </div>
+
+    <!-- ============ Panel 1: 仕訳明細累計 ============ -->
+    <div id="panel1" style="display:none">
+    <p class="text-slate-500 text-sm mb-3">VBA版とWebツール版で作成した仕訳明細累計Excelを比較し、A・D・J・K列をキーとしてL・M列の一致状況を確認します。</p>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-6 space-y-4">
+
+        <!-- File A: VBA版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            VBA版ファイル <span class="text-red-500">*</span>
+          </label>
+          <label for="fileAInput" id="fileARow"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileALabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileAInput" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- File B: Webツール版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Webツール版ファイル <span class="text-red-500">*</span>
+          </label>
+          <label for="fileBInput" id="fileBRow"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileBLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileBInput" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- キー列・確認列 設定 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">キー列（行の対応付けに使用）</label>
+            <input type="text" id="keyColsInput" value="A,D,J,K"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">確認列（一致を確認）</label>
+            <input type="text" id="checkColsInput" value="L,M"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <button id="execBtn" disabled
+          class="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          比較実行
+        </button>
+
+        <!-- Error -->
+        <div id="errorBox" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+          <p id="errorMsg" class="text-red-800 text-sm"></p>
+        </div>
+
+        <!-- Result -->
+        <div id="resultBox" style="display:none" class="space-y-3">
+          <div class="bg-slate-50 rounded-lg p-4 text-sm text-slate-700" id="summaryText"></div>
+          <div class="flex gap-2">
+            <button id="downloadBtn"
+              class="flex-1 py-2.5 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors text-sm">
+              結果をExcelでダウンロード
+            </button>
+          </div>
+          <pre id="detailPre" class="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-auto max-h-96 whitespace-pre"></pre>
+        </div>
+
+      </div>
+    </div>
+    </div>
+
+    <!-- ============ Panel 2: 投資実績 ============ -->
+    <div id="panel2" style="display:none">
+    <p class="text-slate-500 text-sm mb-3">VBA版とWebツール版で作成した投資実績Excelを比較します。シートごとにキー列で行を対応付け、確認列の一致状況を確認します。</p>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-6 space-y-4">
+
+        <!-- File A: VBA版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            VBA版ファイル（投資実績） <span class="text-red-500">*</span>
+          </label>
+          <label for="fileAInput2" id="fileARow2"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileALabel2" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileAInput2" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- File B: Webツール版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Webツール版ファイル（投資実績） <span class="text-red-500">*</span>
+          </label>
+          <label for="fileBInput2" id="fileBRow2"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileBLabel2" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileBInput2" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- シート別キー列・確認列設定 -->
+        <div class="space-y-3" id="sheetKeyCols">
+          <!-- JS で動的生成 -->
+        </div>
+
+        <button id="execBtn2" disabled
+          class="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          比較実行
+        </button>
+
+        <!-- Error -->
+        <div id="errorBox2" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+          <p id="errorMsg2" class="text-red-800 text-sm"></p>
+        </div>
+
+        <!-- Result -->
+        <div id="resultBox2" style="display:none" class="space-y-3">
+          <div class="space-y-2" id="sheetSummaries"></div>
+          <div class="flex gap-2">
+            <button id="downloadBtn2"
+              class="flex-1 py-2.5 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors text-sm">
+              結果をExcelでダウンロード
+            </button>
+          </div>
+          <pre id="detailPre2" class="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-auto max-h-96 whitespace-pre"></pre>
+        </div>
+
+      </div>
+    </div>
+    </div>
+
+    <!-- ============ Panel 3: 資産台帳 ============ -->
+    <div id="panel3">
+    <p class="text-slate-500 text-sm mb-3">VBA版とWebツール版で作成した資産台帳ファイル（先頭シート）を比較します。キー列で行を対応付け、確認列（空欄でキー列以外の全列）の一致状況を確認します。</p>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-6 space-y-4">
+
+        <!-- File A: VBA版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            VBA版ファイル（資産台帳） <span class="text-red-500">*</span>
+          </label>
+          <label for="fileAInput3" id="fileARow3"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileALabel3" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileAInput3" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- File B: Webツール版 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Webツール版ファイル（資産台帳） <span class="text-red-500">*</span>
+          </label>
+          <label for="fileBInput3" id="fileBRow3"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="fileBLabel3" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="fileBInput3" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- キー列・確認列 設定 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">キー列（行の対応付けに使用）</label>
+            <input type="text" id="keyColsInput3" value="D"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">確認列（空欄でキー列以外の全列）</label>
+            <input type="text" id="checkColsInput3" value="F,H" placeholder="例: E,F,G（空欄可）"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <button id="execBtn3" disabled
+          class="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          比較実行
+        </button>
+
+        <!-- Error -->
+        <div id="errorBox3" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+          <p id="errorMsg3" class="text-red-800 text-sm"></p>
+        </div>
+
+        <!-- Result -->
+        <div id="resultBox3" style="display:none" class="space-y-3">
+          <div class="bg-slate-50 rounded-lg p-4 text-sm text-slate-700" id="summaryText3"></div>
+          <div class="flex gap-2">
+            <button id="downloadBtn3"
+              class="flex-1 py-2.5 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors text-sm">
+              結果をExcelでダウンロード
+            </button>
+          </div>
+          <pre id="detailPre3" class="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-auto max-h-96 whitespace-pre"></pre>
+        </div>
+
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+<script>
+  // =====================================================
+  // 共通ユーティリティ
+  // =====================================================
+  function colLetterToIndex(letter) {
+    let n = 0;
+    letter = letter.trim().toUpperCase();
+    for (let i = 0; i < letter.length; i++) {
+      n = n * 26 + (letter.charCodeAt(i) - 64);
+    }
+    return n - 1;
+  }
+
+  function cellText(cell) {
+    if (!cell) return '';
+    if (cell.t === 'n') return String(cell.v);
+    if (cell.v === undefined || cell.v === null) return '';
+    if (cell.v instanceof Date) return cell.v.toISOString();
+    return String(cell.v).trim();
+  }
+
+  // "20260525" のようなテキスト日付と、Dateオブジェクトの日付表現を揃える(YYYYMMDD)
+  function normDate(v) {
+    if (/^\d{8}$/.test(v)) return v;
+    const m = /^\d{4}-\d{2}-\d{2}T/.exec(v);
+    if (m) {
+      const d = new Date(v);
+      d.setUTCHours(d.getUTCHours() + 9);
+      const y = d.getUTCFullYear();
+      const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const da = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}${mo}${da}`;
+    }
+    return v;
+  }
+
+  function readWorkbook(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: 'array', cellDates: true });
+          resolve(wb);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  // シートの!ref(dimension)は末尾に空行が残っていても縮まらないことがあるため、
+  // 実際にデータが入っている最終行を後ろから走査して求める
+  function findActualLastRow(ws, ref) {
+    for (let r = ref.e.r; r >= 1; r--) {
+      for (let c = ref.s.c; c <= ref.e.c; c++) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') return r;
+      }
+    }
+    return 0; // ヘッダー行しかデータがない
+  }
+
+  function buildKey(vals, keyIdx) {
+    return JSON.stringify(keyIdx.map(i => normDate(vals[i] ?? '')));
+  }
+
+  function groupByKey(rows, keyIdx) {
+    const m = new Map();
+    for (const row of rows) {
+      const key = buildKey(row.vals, keyIdx);
+      if (!m.has(key)) m.set(key, []);
+      m.get(key).push(row);
+    }
+    return m;
+  }
+
+  function setupDropZone(row, setFile) {
+    ['dragenter', 'dragover'].forEach(evt => {
+      row.addEventListener(evt, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.add('border-indigo-400', 'bg-indigo-50');
+      });
+    });
+    ['dragleave', 'dragend'].forEach(evt => {
+      row.addEventListener(evt, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('border-indigo-400', 'bg-indigo-50');
+      });
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('border-indigo-400', 'bg-indigo-50');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+  }
+
+  // 指定行(0始まり)・キー列で行を対応付け、確認列の一致状況を集計する
+  function compareRows(rowsA, rowsB, keyIdx, checkIdx, keyLetters, checkLetters) {
+    const groupsA = groupByKey(rowsA, keyIdx);
+    const groupsB = groupByKey(rowsB, keyIdx);
+    const allKeys = new Set([...groupsA.keys(), ...groupsB.keys()]);
+
+    let matchedPairs = 0;
+    let allMatch = 0;
+    const perColMismatch = checkLetters.map(() => 0);
+    let unmatchedA = 0, unmatchedB = 0;
+    const mismatches = [];
+
+    allKeys.forEach(key => {
+      const gA = groupsA.get(key) || [];
+      const gB = groupsB.get(key) || [];
+      const pairCount = Math.min(gA.length, gB.length);
+      for (let i = 0; i < pairCount; i++) {
+        matchedPairs++;
+        const a = gA[i], b = gB[i];
+        let rowAllMatch = true;
+        const checkVals = [];
+        checkIdx.forEach((ci, k) => {
+          const av = a.vals[ci] ?? '';
+          const bv = b.vals[ci] ?? '';
+          if (av !== bv) { rowAllMatch = false; perColMismatch[k]++; }
+          checkVals.push({ letter: checkLetters[k], av, bv, match: av === bv });
+        });
+        if (rowAllMatch) {
+          allMatch++;
+        } else {
+          mismatches.push({
+            aRow: a.excelRow,
+            bRow: b.excelRow,
+            keyVals: keyLetters.map((l, idx) => ({ letter: l, val: a.vals[keyIdx[idx]] })),
+            checkVals: checkVals.filter(c => !c.match),
+          });
+        }
+      }
+      unmatchedA += gA.length - pairCount;
+      unmatchedB += gB.length - pairCount;
+    });
+
+    return { rowsACount: rowsA.length, rowsBCount: rowsB.length, matchedPairs, allMatch, perColMismatch, unmatchedA, unmatchedB, mismatches };
+  }
+
+  // =====================================================
+  // Panel 1: 仕訳明細累計（先頭シート同士の比較）
+  // =====================================================
+  (function () {
+    const fileAInput = document.getElementById('fileAInput');
+    const fileBInput = document.getElementById('fileBInput');
+    const fileALabel = document.getElementById('fileALabel');
+    const fileBLabel = document.getElementById('fileBLabel');
+    const keyColsInput = document.getElementById('keyColsInput');
+    const checkColsInput = document.getElementById('checkColsInput');
+    const execBtn = document.getElementById('execBtn');
+    const errorBox = document.getElementById('errorBox');
+    const errorMsg = document.getElementById('errorMsg');
+    const resultBox = document.getElementById('resultBox');
+    const summaryText = document.getElementById('summaryText');
+    const detailPre = document.getElementById('detailPre');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    const fileARow = document.getElementById('fileARow');
+    const fileBRow = document.getElementById('fileBRow');
+
+    let fileA = null, fileB = null;
+    let lastMismatches = [];
+    let lastSummaryRows = [];
+    let lastKeyLetters = [];
+    let lastCheckLetters = [];
+
+    function setFileA(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileA = file || null;
+      fileALabel.textContent = fileA ? fileA.name : 'ファイルを選択...';
+      fileALabel.className = fileA ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+    function setFileB(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileB = file || null;
+      fileBLabel.textContent = fileB ? fileB.name : 'ファイルを選択...';
+      fileBLabel.className = fileB ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+
+    fileAInput.addEventListener('change', () => setFileA(fileAInput.files[0]));
+    fileBInput.addEventListener('change', () => setFileB(fileBInput.files[0]));
+    setupDropZone(fileARow, setFileA);
+    setupDropZone(fileBRow, setFileB);
+
+    function updateExecState() {
+      execBtn.disabled = !(fileA && fileB);
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorBox.style.display = 'flex';
+      resultBox.style.display = 'none';
+    }
+
+    function loadRows(wb, colIndices) {
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws['!ref']) throw new Error('シートにデータがありません。');
+      const ref = XLSX.utils.decode_range(ws['!ref']);
+      const lastRow = findActualLastRow(ws, ref);
+      const rows = [];
+      for (let r = 1; r <= lastRow; r++) { // 1行目はヘッダー
+        const vals = [];
+        const maxCol = Math.max(ref.e.c, ...colIndices);
+        for (let c = 0; c <= maxCol; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          vals.push(cellText(ws[addr]));
+        }
+        rows.push({ excelRow: r + 1, vals });
+      }
+      return rows;
+    }
+
+    function runCompare() {
+      errorBox.style.display = 'none';
+
+      const keyLetters = keyColsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      const checkLetters = checkColsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (!keyLetters.length || !checkLetters.length) {
+        showError('キー列・確認列を指定してください。');
+        return;
+      }
+      const keyIdx = keyLetters.map(colLetterToIndex);
+      const checkIdx = checkLetters.map(colLetterToIndex);
+
+      Promise.all([readWorkbook(fileA), readWorkbook(fileB)]).then(([wbA, wbB]) => {
+        const allIdx = [...keyIdx, ...checkIdx];
+        const rowsA = loadRows(wbA, allIdx);
+        const rowsB = loadRows(wbB, allIdx);
+
+        const r = compareRows(rowsA, rowsB, keyIdx, checkIdx, keyLetters, checkLetters);
+
+        lastMismatches = r.mismatches;
+        lastKeyLetters = keyLetters;
+        lastCheckLetters = checkLetters;
+        lastSummaryRows = [
+          ['VBA版ファイル名', fileA.name],
+          ['Webツール版ファイル名', fileB.name],
+          ['キー列', keyLetters.join(',')],
+          ['確認列', checkLetters.join(',')],
+          ['VBA総行数', r.rowsACount],
+          ['Web総行数', r.rowsBCount],
+          ['対応付けできた行(ペア)数', r.matchedPairs],
+          ['確認列すべて一致', r.allMatch],
+          ...checkLetters.map((l, k) => [`${l}列に不一致を含む行数`, r.perColMismatch[k]]),
+          ['キー対応なし(VBA側のみ)', r.unmatchedA],
+          ['キー対応なし(Web側のみ)', r.unmatchedB],
+          ['不一致行数', r.mismatches.length],
+        ];
+
+        summaryText.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            <div>VBA総行数: <b>${r.rowsACount}</b></div>
+            <div>Web総行数: <b>${r.rowsBCount}</b></div>
+            <div>対応付け成功: <b>${r.matchedPairs}</b></div>
+            <div>完全一致: <b class="text-emerald-600">${r.allMatch}</b></div>
+            <div>不一致: <b class="text-red-600">${r.mismatches.length}</b></div>
+            <div>キー対応なし VBA/Web: <b>${r.unmatchedA} / ${r.unmatchedB}</b></div>
+          </div>`;
+        detailPre.textContent = r.mismatches.length
+          ? r.mismatches.map(m => {
+              const keyDesc = m.keyVals.map(k => `${k.letter}=${k.val}`).join(' ');
+              const checkDesc = m.checkVals.map(c => `${c.letter}: VBA="${c.av}" / Web="${c.bv}"`).join(' , ');
+              return `VBA行${m.aRow}/Web行${m.bRow}  ${keyDesc}  |  ${checkDesc}`;
+            }).join('\n')
+          : '(不一致なし)';
+        resultBox.style.display = 'block';
+      }).catch(err => {
+        showError('比較中にエラーが発生しました: ' + err.message);
+      });
+    }
+
+    execBtn.addEventListener('click', runCompare);
+
+    downloadBtn.addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+
+      const summaryWs = XLSX.utils.aoa_to_sheet([['項目', '値'], ...lastSummaryRows]);
+      XLSX.utils.book_append_sheet(wb, summaryWs, 'サマリー');
+
+      const header = ['VBA行', 'Web行', ...lastKeyLetters, ...lastCheckLetters.flatMap(l => [`VBA_${l}`, `Web_${l}`])];
+      const detailRows = lastMismatches.map(m => {
+        const checkMap = new Map(m.checkVals.map(c => [c.letter, c]));
+        return [
+          m.aRow,
+          m.bRow,
+          ...m.keyVals.map(k => k.val),
+          ...lastCheckLetters.flatMap(l => {
+            const c = checkMap.get(l);
+            return c ? [c.av, c.bv] : ['', ''];
+          }),
+        ];
+      });
+      const detailWs = XLSX.utils.aoa_to_sheet([header, ...detailRows]);
+      XLSX.utils.book_append_sheet(wb, detailWs, '不一致詳細');
+
+      XLSX.writeFile(wb, '差異チェック結果_仕訳明細累計.xlsx');
+    });
+  })();
+
+  // =====================================================
+  // Panel 2: 投資実績（投資発生・経費発生・建仮 の3シート比較）
+  // =====================================================
+  (function () {
+    const SHEETS = [
+      { name: '投資発生', defaultKey: 'D,F',     defaultCheck: 'I,L,M' },
+      { name: '経費発生', defaultKey: 'A,D,J,K', defaultCheck: 'L,M' },
+      { name: '建仮',     defaultKey: 'B,D,F',   defaultCheck: 'G' },
+    ];
+
+    const fileAInput2 = document.getElementById('fileAInput2');
+    const fileBInput2 = document.getElementById('fileBInput2');
+    const fileALabel2 = document.getElementById('fileALabel2');
+    const fileBLabel2 = document.getElementById('fileBLabel2');
+    const execBtn2 = document.getElementById('execBtn2');
+    const errorBox2 = document.getElementById('errorBox2');
+    const errorMsg2 = document.getElementById('errorMsg2');
+    const resultBox2 = document.getElementById('resultBox2');
+    const sheetSummaries = document.getElementById('sheetSummaries');
+    const detailPre2 = document.getElementById('detailPre2');
+    const downloadBtn2 = document.getElementById('downloadBtn2');
+    const sheetKeyCols = document.getElementById('sheetKeyCols');
+
+    const fileARow2 = document.getElementById('fileARow2');
+    const fileBRow2 = document.getElementById('fileBRow2');
+
+    // シート別キー列・確認列入力欄を生成
+    const keyInputs = {};
+    const checkInputs = {};
+    SHEETS.forEach(s => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `
+        <div class="text-xs font-semibold text-slate-700 mb-1">${s.name}</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">キー列</label>
+            <input type="text" value="${s.defaultKey}"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">確認列</label>
+            <input type="text" value="${s.defaultCheck}"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>`;
+      sheetKeyCols.appendChild(wrap);
+      const inputs = wrap.querySelectorAll('input');
+      keyInputs[s.name] = inputs[0];
+      checkInputs[s.name] = inputs[1];
+    });
+
+    let fileA = null, fileB = null;
+    let lastResults = []; // [{ sheetName, keyLetters, checkLetters, ...compareRows結果 }]
+
+    function setFileA(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileA = file || null;
+      fileALabel2.textContent = fileA ? fileA.name : 'ファイルを選択...';
+      fileALabel2.className = fileA ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+    function setFileB(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileB = file || null;
+      fileBLabel2.textContent = fileB ? fileB.name : 'ファイルを選択...';
+      fileBLabel2.className = fileB ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+
+    fileAInput2.addEventListener('change', () => setFileA(fileAInput2.files[0]));
+    fileBInput2.addEventListener('change', () => setFileB(fileBInput2.files[0]));
+    setupDropZone(fileARow2, setFileA);
+    setupDropZone(fileBRow2, setFileB);
+
+    function updateExecState() {
+      execBtn2.disabled = !(fileA && fileB);
+    }
+
+    function showError(msg) {
+      errorMsg2.textContent = msg;
+      errorBox2.style.display = 'flex';
+      resultBox2.style.display = 'none';
+    }
+
+    function loadRowsFromSheet(wb, sheetName, colIndices) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) throw new Error(`シート「${sheetName}」が見つかりません。`);
+      if (!ws['!ref']) throw new Error(`シート「${sheetName}」にデータがありません。`);
+      const ref = XLSX.utils.decode_range(ws['!ref']);
+      const lastRow = findActualLastRow(ws, ref);
+      const rows = [];
+      for (let r = 1; r <= lastRow; r++) { // 1行目はヘッダー
+        const vals = [];
+        const maxCol = Math.max(ref.e.c, ...colIndices);
+        for (let c = 0; c <= maxCol; c++) {
+          vals.push(cellText(ws[XLSX.utils.encode_cell({ r, c })]));
+        }
+        rows.push({ excelRow: r + 1, vals });
+      }
+      return rows;
+    }
+
+    function compareSheet(wbA, wbB, sheetName, keyLetters, checkLetters) {
+      const keyIdx = keyLetters.map(colLetterToIndex);
+      const checkIdx = checkLetters.map(colLetterToIndex);
+      const allIdx = [...keyIdx, ...checkIdx];
+
+      const rowsA = loadRowsFromSheet(wbA, sheetName, allIdx);
+      const rowsB = loadRowsFromSheet(wbB, sheetName, allIdx);
+
+      const r = compareRows(rowsA, rowsB, keyIdx, checkIdx, keyLetters, checkLetters);
+      return { sheetName, keyLetters, checkLetters, ...r };
+    }
+
+    function runCompare() {
+      errorBox2.style.display = 'none';
+
+      Promise.all([readWorkbook(fileA), readWorkbook(fileB)]).then(([wbA, wbB]) => {
+        const results = [];
+        for (const s of SHEETS) {
+          const keyLetters = keyInputs[s.name].value.split(',').map(v => v.trim()).filter(Boolean);
+          const checkLetters = checkInputs[s.name].value.split(',').map(v => v.trim()).filter(Boolean);
+          if (!keyLetters.length || !checkLetters.length) throw new Error(`${s.name}のキー列・確認列を指定してください。`);
+          results.push(compareSheet(wbA, wbB, s.name, keyLetters, checkLetters));
+        }
+        lastResults = results;
+
+        sheetSummaries.innerHTML = results.map(r => `
+          <div class="bg-slate-50 rounded-lg p-4 text-sm text-slate-700">
+            <div class="font-semibold text-slate-800 mb-2">${r.sheetName}<span class="text-xs font-normal text-slate-400 ml-2">キー列: ${r.keyLetters.join(',')}</span></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>VBA総行数: <b>${r.rowsACount}</b></div>
+              <div>Web総行数: <b>${r.rowsBCount}</b></div>
+              <div>対応付け成功: <b>${r.matchedPairs}</b></div>
+              <div>完全一致: <b class="text-emerald-600">${r.allMatch}</b></div>
+              <div>不一致: <b class="text-red-600">${r.mismatches.length}</b></div>
+              <div>キー対応なし VBA/Web: <b>${r.unmatchedA} / ${r.unmatchedB}</b></div>
+            </div>
+          </div>`).join('');
+
+        const detailLines = [];
+        results.forEach(r => {
+          if (!r.mismatches.length) return;
+          detailLines.push(`■ ${r.sheetName}`);
+          r.mismatches.forEach(m => {
+            const keyDesc = m.keyVals.map(k => `${k.letter}=${k.val}`).join(' ');
+            const checkDesc = m.checkVals.map(c => `${c.letter}: VBA="${c.av}" / Web="${c.bv}"`).join(' , ');
+            detailLines.push(`  VBA行${m.aRow}/Web行${m.bRow}  ${keyDesc}  |  ${checkDesc}`);
+          });
+        });
+        detailPre2.textContent = detailLines.length ? detailLines.join('\n') : '(不一致なし)';
+        resultBox2.style.display = 'block';
+      }).catch(err => {
+        showError('比較中にエラーが発生しました: ' + err.message);
+      });
+    }
+
+    execBtn2.addEventListener('click', runCompare);
+
+    downloadBtn2.addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+
+      const summaryRows = [['シート', '項目', '値']];
+      lastResults.forEach(r => {
+        summaryRows.push(
+          [r.sheetName, 'キー列', r.keyLetters.join(',')],
+          [r.sheetName, 'VBA総行数', r.rowsACount],
+          [r.sheetName, 'Web総行数', r.rowsBCount],
+          [r.sheetName, '対応付けできた行(ペア)数', r.matchedPairs],
+          [r.sheetName, '確認列すべて一致', r.allMatch],
+          [r.sheetName, 'キー対応なし(VBA側のみ)', r.unmatchedA],
+          [r.sheetName, 'キー対応なし(Web側のみ)', r.unmatchedB],
+          [r.sheetName, '不一致行数', r.mismatches.length],
+        );
+      });
+      const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(wb, summaryWs, 'サマリー');
+
+      lastResults.forEach(r => {
+        const header = ['VBA行', 'Web行', ...r.keyLetters, '不一致列', 'VBA値', 'Web値'];
+        const rows = [];
+        r.mismatches.forEach(m => {
+          m.checkVals.forEach(c => {
+            rows.push([m.aRow, m.bRow, ...m.keyVals.map(k => k.val), c.letter, c.av, c.bv]);
+          });
+        });
+        const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+        XLSX.utils.book_append_sheet(wb, ws, `${r.sheetName}_不一致`.slice(0, 31));
+      });
+
+      XLSX.writeFile(wb, '差異チェック結果_投資実績.xlsx');
+    });
+  })();
+
+  // =====================================================
+  // Panel 3: 資産台帳（先頭シート同士の比較。確認列が空欄ならキー列以外の全列を比較）
+  // =====================================================
+  (function () {
+    const fileAInput = document.getElementById('fileAInput3');
+    const fileBInput = document.getElementById('fileBInput3');
+    const fileALabel = document.getElementById('fileALabel3');
+    const fileBLabel = document.getElementById('fileBLabel3');
+    const keyColsInput = document.getElementById('keyColsInput3');
+    const checkColsInput = document.getElementById('checkColsInput3');
+    const execBtn = document.getElementById('execBtn3');
+    const errorBox = document.getElementById('errorBox3');
+    const errorMsg = document.getElementById('errorMsg3');
+    const resultBox = document.getElementById('resultBox3');
+    const summaryText = document.getElementById('summaryText3');
+    const detailPre = document.getElementById('detailPre3');
+    const downloadBtn = document.getElementById('downloadBtn3');
+
+    const fileARow = document.getElementById('fileARow3');
+    const fileBRow = document.getElementById('fileBRow3');
+
+    let fileA = null, fileB = null;
+    let lastMismatches = [];
+    let lastSummaryRows = [];
+    let lastKeyLetters = [];
+    let lastCheckLetters = [];
+
+    function setFileA(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileA = file || null;
+      fileALabel.textContent = fileA ? fileA.name : 'ファイルを選択...';
+      fileALabel.className = fileA ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+    function setFileB(file) {
+      if (file && !/\.(xlsx|xls)$/i.test(file.name)) return;
+      fileB = file || null;
+      fileBLabel.textContent = fileB ? fileB.name : 'ファイルを選択...';
+      fileBLabel.className = fileB ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+      updateExecState();
+    }
+
+    fileAInput.addEventListener('change', () => setFileA(fileAInput.files[0]));
+    fileBInput.addEventListener('change', () => setFileB(fileBInput.files[0]));
+    setupDropZone(fileARow, setFileA);
+    setupDropZone(fileBRow, setFileB);
+
+    function updateExecState() {
+      execBtn.disabled = !(fileA && fileB);
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorBox.style.display = 'flex';
+      resultBox.style.display = 'none';
+    }
+
+    function loadRows(wb, colIndices) {
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws['!ref']) throw new Error('シートにデータがありません。');
+      const ref = XLSX.utils.decode_range(ws['!ref']);
+      const lastRow = findActualLastRow(ws, ref);
+      const rows = [];
+      for (let r = 1; r <= lastRow; r++) { // 1行目はヘッダー
+        const vals = [];
+        const maxCol = Math.max(ref.e.c, ...colIndices);
+        for (let c = 0; c <= maxCol; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          vals.push(cellText(ws[addr]));
+        }
+        rows.push({ excelRow: r + 1, vals });
+      }
+      return rows;
+    }
+
+    function runCompare() {
+      errorBox.style.display = 'none';
+
+      const keyLetters = keyColsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (!keyLetters.length) {
+        showError('キー列を指定してください。');
+        return;
+      }
+      const keyIdx = keyLetters.map(colLetterToIndex);
+      const explicitCheckLetters = checkColsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
+      Promise.all([readWorkbook(fileA), readWorkbook(fileB)]).then(([wbA, wbB]) => {
+        let checkLetters, checkIdx;
+        if (explicitCheckLetters.length) {
+          checkLetters = explicitCheckLetters;
+          checkIdx = checkLetters.map(colLetterToIndex);
+        } else {
+          const wsA = wbA.Sheets[wbA.SheetNames[0]];
+          const wsB = wbB.Sheets[wbB.SheetNames[0]];
+          const maxCol = Math.max(
+            XLSX.utils.decode_range(wsA['!ref']).e.c,
+            XLSX.utils.decode_range(wsB['!ref']).e.c,
+          );
+          checkIdx = [];
+          for (let c = 0; c <= maxCol; c++) if (!keyIdx.includes(c)) checkIdx.push(c);
+          checkLetters = checkIdx.map(i => XLSX.utils.encode_col(i));
+        }
+
+        const allIdx = [...keyIdx, ...checkIdx];
+        const rowsA = loadRows(wbA, allIdx);
+        const rowsB = loadRows(wbB, allIdx);
+
+        const r = compareRows(rowsA, rowsB, keyIdx, checkIdx, keyLetters, checkLetters);
+
+        lastMismatches = r.mismatches;
+        lastKeyLetters = keyLetters;
+        lastCheckLetters = checkLetters;
+        lastSummaryRows = [
+          ['VBA版ファイル名', fileA.name],
+          ['Webツール版ファイル名', fileB.name],
+          ['キー列', keyLetters.join(',')],
+          ['確認列', checkLetters.join(',')],
+          ['VBA総行数', r.rowsACount],
+          ['Web総行数', r.rowsBCount],
+          ['対応付けできた行(ペア)数', r.matchedPairs],
+          ['確認列すべて一致', r.allMatch],
+          ['キー対応なし(VBA側のみ)', r.unmatchedA],
+          ['キー対応なし(Web側のみ)', r.unmatchedB],
+          ['不一致行数', r.mismatches.length],
+        ];
+
+        summaryText.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            <div>VBA総行数: <b>${r.rowsACount}</b></div>
+            <div>Web総行数: <b>${r.rowsBCount}</b></div>
+            <div>対応付け成功: <b>${r.matchedPairs}</b></div>
+            <div>完全一致: <b class="text-emerald-600">${r.allMatch}</b></div>
+            <div>不一致: <b class="text-red-600">${r.mismatches.length}</b></div>
+            <div>キー対応なし VBA/Web: <b>${r.unmatchedA} / ${r.unmatchedB}</b></div>
+          </div>
+          <div class="text-xs text-slate-400 mt-2">確認列: ${checkLetters.join(',')}</div>`;
+        detailPre.textContent = r.mismatches.length
+          ? r.mismatches.map(m => {
+              const keyDesc = m.keyVals.map(k => `${k.letter}=${k.val}`).join(' ');
+              const checkDesc = m.checkVals.map(c => `${c.letter}: VBA="${c.av}" / Web="${c.bv}"`).join(' , ');
+              return `VBA行${m.aRow}/Web行${m.bRow}  ${keyDesc}  |  ${checkDesc}`;
+            }).join('\n')
+          : '(不一致なし)';
+        resultBox.style.display = 'block';
+      }).catch(err => {
+        showError('比較中にエラーが発生しました: ' + err.message);
+      });
+    }
+
+    execBtn.addEventListener('click', runCompare);
+
+    downloadBtn.addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+
+      const summaryWs = XLSX.utils.aoa_to_sheet([['項目', '値'], ...lastSummaryRows]);
+      XLSX.utils.book_append_sheet(wb, summaryWs, 'サマリー');
+
+      const header = ['VBA行', 'Web行', ...lastKeyLetters, ...lastCheckLetters.flatMap(l => [`VBA_${l}`, `Web_${l}`])];
+      const detailRows = lastMismatches.map(m => {
+        const checkMap = new Map(m.checkVals.map(c => [c.letter, c]));
+        return [
+          m.aRow,
+          m.bRow,
+          ...m.keyVals.map(k => k.val),
+          ...lastCheckLetters.flatMap(l => {
+            const c = checkMap.get(l);
+            return c ? [c.av, c.bv] : ['', ''];
+          }),
+        ];
+      });
+      const detailWs = XLSX.utils.aoa_to_sheet([header, ...detailRows]);
+      XLSX.utils.book_append_sheet(wb, detailWs, '不一致詳細');
+
+      XLSX.writeFile(wb, '差異チェック結果_資産台帳.xlsx');
+    });
+  })();
+
+  // =====================================================
+  // タブ切り替え
+  // =====================================================
+  (function () {
+    const tabBtn1 = document.getElementById('tabBtn1');
+    const tabBtn2 = document.getElementById('tabBtn2');
+    const tabBtn3 = document.getElementById('tabBtn3');
+    const panel1 = document.getElementById('panel1');
+    const panel2 = document.getElementById('panel2');
+    const panel3 = document.getElementById('panel3');
+
+    function activate(tab) {
+      const on = 'flex-1 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 text-white transition-colors';
+      const off = 'flex-1 py-2.5 rounded-xl font-semibold text-sm bg-white text-slate-500 border border-slate-200 transition-colors';
+      panel1.style.display = tab === 1 ? 'block' : 'none';
+      panel2.style.display = tab === 2 ? 'block' : 'none';
+      panel3.style.display = tab === 3 ? 'block' : 'none';
+      tabBtn1.className = tab === 1 ? on : off;
+      tabBtn2.className = tab === 2 ? on : off;
+      tabBtn3.className = tab === 3 ? on : off;
+    }
+    tabBtn1.addEventListener('click', () => activate(1));
+    tabBtn2.addEventListener('click', () => activate(2));
+    tabBtn3.addEventListener('click', () => activate(3));
+  })();
+</script>
+</body>
+</html>
