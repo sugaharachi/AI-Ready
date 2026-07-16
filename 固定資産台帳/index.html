@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>固定資産台帳 更新ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    onload="console.log('JSZip ロード成功')"
+    onerror="console.warn('JSZip ロード失敗')"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-start justify-center p-4 py-6">
+
+  <div class="w-full max-w-xl">
+
+    <div class="mb-4">
+      <h1 class="text-lg font-bold text-slate-800">固定資産台帳 更新ツール</h1>
+      <p class="text-slate-500 text-sm mt-1">固定資産台帳と償却シミュレーション（6ファイル）を整形し、マスタファイルへ一括転記します。</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-6 space-y-4">
+
+        <!-- 年度 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            年度 <span class="text-red-500">*</span>
+          </label>
+          <input type="number" id="yearInput" placeholder="例: 2026"
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- 固定資産台帳ソースファイル -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            固定資産台帳ソースファイル <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-400 mb-2">SAP等から抽出したExcelファイル</p>
+          <label for="ledgerFileInput" id="ledgerFileRow"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="ledgerFileLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="ledgerFileInput" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- 償却シミュレーションファイル ×6 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            償却シミュレーションファイル（6ファイル） <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-400 mb-2">年度は年度欄から自動採番されます（欄ごとに変更可）</p>
+          <div class="space-y-2">
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput1" id="depFileRow1"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel1" class="text-slate-400 text-sm truncate flex-1">ファイル1を選択...</span>
+              </label>
+              <input type="file" id="depFileInput1" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput1" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput2" id="depFileRow2"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel2" class="text-slate-400 text-sm truncate flex-1">ファイル2を選択...</span>
+              </label>
+              <input type="file" id="depFileInput2" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput2" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput3" id="depFileRow3"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel3" class="text-slate-400 text-sm truncate flex-1">ファイル3を選択...</span>
+              </label>
+              <input type="file" id="depFileInput3" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput3" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput4" id="depFileRow4"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel4" class="text-slate-400 text-sm truncate flex-1">ファイル4を選択...</span>
+              </label>
+              <input type="file" id="depFileInput4" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput4" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput5" id="depFileRow5"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel5" class="text-slate-400 text-sm truncate flex-1">ファイル5を選択...</span>
+              </label>
+              <input type="file" id="depFileInput5" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput5" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="depFileInput6" id="depFileRow6"
+                class="flex-1 flex items-center gap-2 border-2 border-dashed border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all min-w-0">
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span id="depFileLabel6" class="text-slate-400 text-sm truncate flex-1">ファイル6を選択...</span>
+              </label>
+              <input type="file" id="depFileInput6" accept=".xlsx,.xls" class="hidden">
+              <input type="number" id="depYearInput6" placeholder="年度"
+                class="w-20 border border-slate-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 出力先マスタファイル -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            出力先マスタファイル <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-400 mb-2">「資産台帳」「償却シミュレーション」シートを持つ既存ブック</p>
+          <label for="masterFileInput" id="masterFileRow"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="masterFileLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="masterFileInput" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- Execute -->
+        <button id="execBtn" disabled
+          class="w-full py-3 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          実行
+        </button>
+
+        <!-- Progress -->
+        <div id="progress" style="display:none" class="space-y-1">
+          <div id="step1Row" class="flex items-center gap-2 text-sm text-slate-500">
+            <span id="step1Icon">○</span><span>ステップ1: 固定資産台帳を整形中...</span>
+          </div>
+          <div id="step2Row" class="flex items-center gap-2 text-sm text-slate-400">
+            <span id="step2Icon">○</span><span>ステップ2: 償却シミュレーション（6ファイル）を整形中...</span>
+          </div>
+          <div id="step3Row" class="flex items-center gap-2 text-sm text-slate-400">
+            <span id="step3Icon">○</span><span>ステップ3: マスタファイルへ転記中...</span>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div id="successBox" style="display:none" class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+          <svg class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+          <div>
+            <p class="text-emerald-800 font-medium text-sm">処理が完了しました</p>
+            <p id="successDetail" class="text-emerald-600 text-xs mt-0.5"></p>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div id="errorBox" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+          <p id="errorMsg" class="text-red-800 text-sm"></p>
+        </div>
+
+        <!-- Download -->
+        <div id="downloadArea" style="display:none">
+          <a id="dlOutput" href="#"
+            class="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            更新済みマスタファイルをダウンロード
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /wrapper -->
+
+  <script>
+    // =====================================================
+    // 共通ユーティリティ: Excelファイル読み込み（月次作業ツールと同一ロジック）
+    // =====================================================
+    function readWorkbook(bytes) {
+      const b0 = bytes[0], b1 = bytes[1], b2 = bytes[2];
+      if (b0 === 0x50 && b1 === 0x4B) {
+        return { fmt: 'xlsx(ZIP)',  wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+      }
+      if (b0 === 0xD0 && b1 === 0xCF) {
+        return { fmt: 'xls(OLE2)', wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+      }
+      let text, fmt;
+      if (b0 === 0xEF && b1 === 0xBB && b2 === 0xBF) {
+        fmt  = 'text(UTF-8 BOM)';
+        text = new TextDecoder('utf-8').decode(bytes.slice(3));
+      } else if (b0 === 0xFF && b1 === 0xFE) {
+        fmt  = 'text(UTF-16 LE)';
+        text = new TextDecoder('utf-16le').decode(bytes.slice(2));
+      } else if (b0 === 0xFE && b1 === 0xFF) {
+        fmt  = 'text(UTF-16 BE)';
+        text = new TextDecoder('utf-16be').decode(bytes.slice(2));
+      } else {
+        fmt  = 'text(CP932/Shift-JIS)';
+        text = new TextDecoder('shift-jis').decode(bytes);
+      }
+      return { fmt, wb: XLSX.read(text, { type: 'string', cellNF: true }) };
+    }
+
+    // 元ファイルにオートフィルタ/非表示行が残っていると処理漏れの原因になるため除去
+    function clearFilterState(wb) {
+      wb.SheetNames.forEach(name => {
+        const ws = wb.Sheets[name];
+        if (!ws) return;
+        delete ws['!autofilter'];
+        if (ws['!rows']) ws['!rows'].forEach(r => { if (r) delete r.hidden; });
+      });
+      return wb;
+    }
+
+    function setCellStr(ws, r, c, v) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (v === '' || v === null || v === undefined) { delete ws[addr]; return; }
+      ws[addr] = typeof v === 'number' ? { t: 'n', v } : { t: 's', v: String(v) };
+    }
+
+    // 列削除: startCol〜endCol を削除し右の列を左へシフト
+    function wsDeleteCols(ws, startCol, endCol) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      if (startCol > range.e.c) return;
+      endCol = Math.min(endCol, range.e.c);
+      const numDel = endCol - startCol + 1;
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = startCol; C <= range.e.c; C++) {
+          const to = XLSX.utils.encode_cell({ r: R, c: C });
+          const srcC = C + numDel;
+          if (srcC <= range.e.c) {
+            const from = XLSX.utils.encode_cell({ r: R, c: srcC });
+            if (ws[from]) ws[to] = ws[from]; else delete ws[to];
+          } else {
+            delete ws[to];
+          }
+        }
+      }
+      range.e.c -= numDel;
+      ws['!ref'] = XLSX.utils.encode_range(range);
+      if (ws['!cols']) ws['!cols'].splice(startCol, numDel);
+    }
+
+    // 行削除: startRow〜endRow を削除し下の行を上へシフト
+    function wsDeleteRows(ws, startRow, endRow) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const numDel = endRow - startRow + 1;
+      for (let R = startRow; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const to = XLSX.utils.encode_cell({ r: R, c: C });
+          const srcR = R + numDel;
+          if (srcR <= range.e.r) {
+            const from = XLSX.utils.encode_cell({ r: srcR, c: C });
+            if (ws[from]) ws[to] = ws[from]; else delete ws[to];
+          } else {
+            delete ws[to];
+          }
+        }
+      }
+      range.e.r -= numDel;
+      ws['!ref'] = XLSX.utils.encode_range(range);
+      if (ws['!rows']) ws['!rows'].splice(startRow, numDel);
+    }
+
+    // 1行削除
+    function wsDeleteRow(ws, rowIdx) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = rowIdx; R < range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const to   = XLSX.utils.encode_cell({ r: R,     c: C });
+          const from = XLSX.utils.encode_cell({ r: R + 1, c: C });
+          if (ws[from]) ws[to] = ws[from]; else delete ws[to];
+        }
+      }
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        delete ws[XLSX.utils.encode_cell({ r: range.e.r, c: C })];
+      }
+      range.e.r -= 1;
+      ws['!ref'] = XLSX.utils.encode_range(range);
+    }
+
+    // 列挿入: colIdx の位置に空列を挿入し右へシフト
+    function wsInsertCol(ws, colIdx) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.e.c; C >= colIdx; C--) {
+          const from = XLSX.utils.encode_cell({ r: R, c: C });
+          const to   = XLSX.utils.encode_cell({ r: R, c: C + 1 });
+          if (ws[from]) ws[to] = ws[from]; else delete ws[to];
+        }
+        delete ws[XLSX.utils.encode_cell({ r: R, c: colIdx })];
+      }
+      range.e.c += 1;
+      ws['!ref'] = XLSX.utils.encode_range(range);
+    }
+
+    // セルをExcel日付シリアルに変換（変換不可はnull）
+    function cellToDateSerial(cell) {
+      if (!cell) return null;
+      if (cell.t === 'n') {
+        const v = cell.v;
+        if (Number.isInteger(v) && v >= 19000101 && v <= 20991231) {
+          const yr = Math.floor(v/10000), mo = Math.floor((v%10000)/100), dy = v%100;
+          return (Date.UTC(yr, mo-1, dy) - Date.UTC(1899,11,30)) / 86400000;
+        }
+        return v;
+      }
+      if (cell.t === 'd' && cell.v instanceof Date) {
+        const d = cell.v;
+        return (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+      }
+      if (cell.t === 's' && /^\d{8}$/.test(String(cell.v))) {
+        const s = String(cell.v);
+        return (Date.UTC(+s.substr(0,4), +s.substr(4,2)-1, +s.substr(6,2)) - Date.UTC(1899,11,30)) / 86400000;
+      }
+      return null;
+    }
+
+    // ワークブック間セルコピー用クリーナー（s(スタイルindex)は除去、日付は正規化）
+    function cleanCellForCopy(cell) {
+      if (!cell) return null;
+      if (cell.t === 'd' && cell.v instanceof Date) {
+        const d = cell.v;
+        const serial = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000;
+        return { t: 'n', v: serial, z: 'yyyy/mm/dd' };
+      }
+      const c = { t: cell.t, v: cell.v };
+      if (cell.z !== undefined) c.z = cell.z;
+      if (cell.f !== undefined) c.f = cell.f;
+      function tryConvYMD(str) {
+        if (str.length !== 8) return false;
+        const yr = +str.substr(0, 4), mo = +str.substr(4, 2), dy = +str.substr(6, 2);
+        if (yr <= 1900 || mo < 1 || mo > 12 || dy < 1 || dy > 31) return false;
+        c.t = 'n';
+        c.v = (Date.UTC(yr, mo - 1, dy) - Date.UTC(1899, 11, 30)) / 86400000;
+        c.z = 'yyyy/mm/dd';
+        return true;
+      }
+      if (c.t === 's' && /^\d{8}$/.test(String(c.v))) tryConvYMD(String(c.v));
+      if (c.t === 'n' && Number.isInteger(c.v) && c.v >= 19000101 && c.v <= 20991231) tryConvYMD(String(Math.floor(c.v)));
+      if (c.z && /^[yYmMdD]+$/.test(c.z)) c.z = 'yyyy/mm/dd';
+      return c;
+    }
+
+    function xlColToIdx(letters) {
+      let idx = 0;
+      for (const ch of letters) idx = idx * 26 + (ch.charCodeAt(0) - 64);
+      return idx - 1;
+    }
+
+    function xlIdxToCol(n) {
+      let s = ''; n++;
+      while (n > 0) { s = String.fromCharCode(64 + ((n-1)%26+1)) + s; n = Math.floor((n-1)/26); }
+      return s;
+    }
+
+    function tick() {
+      return new Promise(r => setTimeout(r, 0));
+    }
+
+    // =====================================================
+    // 固定資産台帳 整形処理（VBA: 固定資産台帳()）
+    // =====================================================
+    function fiscalYearRange(yearValue) {
+      const yr = Number(yearValue);
+      return {
+        startSerial: (Date.UTC(yr, 3, 1) - Date.UTC(1899, 11, 30)) / 86400000,
+        endSerial:   (Date.UTC(yr + 1, 2, 31) - Date.UTC(1899, 11, 30)) / 86400000,
+      };
+    }
+
+    function processKoteishisanDaicho(bytes, yearValue) {
+      const { wb } = readWorkbook(bytes);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws || !ws['!ref']) throw new Error('固定資産台帳: シートが見つかりません。');
+      clearFilterState(wb);
+
+      // A:B列削除
+      wsDeleteCols(ws, 0, 1);
+      // 1〜4行目削除
+      wsDeleteRows(ws, 0, 3);
+
+      // A列(idx0)が「勘定設定キー」または空の行を削除（下から上へ）
+      let range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.e.r; R >= 1; R--) {
+        const aCell = ws[XLSX.utils.encode_cell({ r: R, c: 0 })];
+        const av = aCell ? String(aCell.v ?? '') : '';
+        if (av === '勘定設定キー' || av === '') wsDeleteRow(ws, R);
+      }
+
+      range = XLSX.utils.decode_range(ws['!ref']);
+      const lastRow = range.e.r;
+      const bgIdx = xlColToIdx('BG'); // 58
+      const { startSerial, endSerial } = fiscalYearRange(yearValue);
+      let taggedRows = 0;
+
+      for (let R = 1; R <= lastRow; R++) {
+        // D列(idx3)を数値書式、H列(idx7)を日付書式
+        const dAddr = XLSX.utils.encode_cell({ r: R, c: 3 });
+        if (ws[dAddr]) ws[dAddr].z = '0';
+        const hAddr = XLSX.utils.encode_cell({ r: R, c: 7 });
+        const hCell = ws[hAddr];
+        if (hCell) hCell.z = 'yyyy/mm/dd';
+
+        // BG列(idx58)に年度を設定
+        setCellStr(ws, R, bgIdx, yearValue);
+
+        // I列(idx8): H列日付が対象年度内なら「yyyy年度」
+        const hSerial = cellToDateSerial(hCell);
+        if (hSerial !== null && hSerial >= startSerial && hSerial <= endSerial) {
+          setCellStr(ws, R, 8, `${yearValue}年度`);
+          taggedRows++;
+        }
+      }
+
+      range = XLSX.utils.decode_range(ws['!ref']);
+      if (range.e.c < bgIdx) {
+        ws['!ref'] = XLSX.utils.encode_range({ s: range.s, e: { r: range.e.r, c: bgIdx } });
+      }
+
+      return { wb, ws, lastRow, taggedRows };
+    }
+
+    // =====================================================
+    // 償却シミュレーション 整形処理（VBA: 償却シミュレーション()、1ファイル分）
+    // =====================================================
+    function processShoukyaku(bytes, yearValue, label) {
+      const { wb } = readWorkbook(bytes);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws || !ws['!ref']) throw new Error(`償却シミュレーション（${label}）: シートが見つかりません。`);
+      clearFilterState(wb);
+
+      // G列→E列→A:B列の順に削除（VBAの削除順を踏襲）
+      wsDeleteCols(ws, 6, 6); // G
+      wsDeleteCols(ws, 4, 4); // E
+      wsDeleteCols(ws, 0, 1); // A:B
+
+      // 1〜4行目削除
+      wsDeleteRows(ws, 0, 3);
+
+      // E列(idx4)が空の行を削除（下から上へ）
+      let range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.e.r; R >= 1; R--) {
+        const eCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })];
+        const ev = eCell ? String(eCell.v ?? '') : '';
+        if (ev === '') wsDeleteRow(ws, R);
+      }
+
+      range = XLSX.utils.decode_range(ws['!ref']);
+      const lastRow = range.e.r;
+
+      for (let R = 1; R <= lastRow; R++) {
+        // B:C列(idx1,2)を数値として再認識・書式設定
+        for (const C of [1, 2]) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[addr];
+          if (!cell) continue;
+          const num = cell.t === 'n' ? cell.v : Number(cell.v);
+          if (!isNaN(num)) ws[addr] = { t: 'n', v: num, z: '0' };
+        }
+        // E列(idx4)を日付書式に変換
+        const eAddr = XLSX.utils.encode_cell({ r: R, c: 4 });
+        const eSerial = cellToDateSerial(ws[eAddr]);
+        if (eSerial !== null) ws[eAddr] = { t: 'n', v: eSerial, z: 'yyyy/mm/dd' };
+      }
+
+      // V列(idx21)を挿入し「合計(×▲1)」列を追加（J:U列の合計×-1を数値で設定）
+      wsInsertCol(ws, 21);
+      setCellStr(ws, 0, 21, '合計(×▲1)');
+      for (let R = 1; R <= lastRow; R++) {
+        let sum = 0;
+        for (let C = 9; C <= 20; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          const v = cell ? (cell.t === 'n' ? cell.v : Number(cell.v)) : 0;
+          if (!isNaN(v)) sum += v;
+        }
+        setCellStr(ws, R, 21, sum * -1);
+      }
+
+      // X列(idx23)に年度を設定
+      setCellStr(ws, 0, 23, '年度');
+      for (let R = 1; R <= lastRow; R++) setCellStr(ws, R, 23, yearValue);
+
+      range = XLSX.utils.decode_range(ws['!ref']);
+      if (range.e.c < 23) {
+        ws['!ref'] = XLSX.utils.encode_range({ s: range.s, e: { r: range.e.r, c: 23 } });
+      }
+
+      return { wb, ws, lastRow };
+    }
+
+    // =====================================================
+    // マスタファイルへの転記（VBA: データ転記()）
+    // =====================================================
+
+    // シートのデータ行(1行目以降)をクリア、ヘッダー行は保持
+    function clearSheetRows(wb, sheetName) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws || !ws['!ref']) throw new Error(`シート「${sheetName}」が見つかりません。マスタファイルを確認してください。`);
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; R++)
+        for (let C = range.s.c; C <= range.e.c; C++)
+          delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: range.e.c } });
+    }
+
+    // 指定列が対象年度に一致する行を削除し、残りの行を前詰めする
+    function removeRowsByYear(ws, colIdx, targetYear) {
+      if (!ws || !ws['!ref']) throw new Error('資産台帳シートが見つかりません。マスタファイルを確認してください。');
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const numCols = range.e.c + 1;
+      const kept = [];
+      for (let R = 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: colIdx })];
+        const v = cell ? String(cell.v ?? '') : '';
+        if (v === String(targetYear)) continue;
+        const row = [];
+        for (let C = 0; C < numCols; C++) row.push(ws[XLSX.utils.encode_cell({ r: R, c: C })] || null);
+        kept.push(row);
+      }
+      for (let R = 1; R <= range.e.r; R++)
+        for (let C = 0; C < numCols; C++)
+          delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      for (let R = 0; R < kept.length; R++)
+        for (let C = 0; C < numCols; C++)
+          if (kept[R][C]) ws[XLSX.utils.encode_cell({ r: R + 1, c: C })] = kept[R][C];
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(0, kept.length), c: range.e.c } });
+      return { removed: range.e.r - kept.length, kept: kept.length };
+    }
+
+    // srcWsのデータ行をdestWsの末尾に追加（既存データは残したまま）
+    function appendRowsToSheet(srcWs, destWs, colStart, colEnd) {
+      const srcRange  = XLSX.utils.decode_range(srcWs['!ref']);
+      const destRange = XLSX.utils.decode_range(destWs['!ref']);
+      let destRow = destRange.e.r + 1;
+      let appended = 0;
+      for (let R = 1; R <= srcRange.e.r; R++) {
+        const aCell = srcWs[XLSX.utils.encode_cell({ r: R, c: 0 })];
+        if (!aCell) continue;
+        for (let C = colStart; C <= colEnd; C++) {
+          const cell = srcWs[XLSX.utils.encode_cell({ r: R, c: C })];
+          const destAddr = XLSX.utils.encode_cell({ r: destRow, c: C });
+          if (cell) destWs[destAddr] = cleanCellForCopy(cell); else delete destWs[destAddr];
+        }
+        destRow++; appended++;
+      }
+      destWs['!ref'] = XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: Math.max(destRange.e.r, destRow - 1), c: Math.max(destRange.e.c, colEnd) },
+      });
+      return appended;
+    }
+
+    // =====================================================
+    // JSZipテンプレート方式での出力（他シート・書式を保持したまま該当シートのみ差し替え）
+    // =====================================================
+    async function getSheetPaths(zip) {
+      const wbXml   = await zip.file('xl/workbook.xml').async('string');
+      const relsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+      const rIdToName = {};
+      let m;
+      const sheetRe = /<sheet\b([^>]*)>/g;
+      while ((m = sheetRe.exec(wbXml)) !== null) {
+        const attrs = m[1];
+        const nm = (attrs.match(/\bname="([^"]*)"/) || [])[1];
+        const id = (attrs.match(/\br:id="([^"]*)"/)  || [])[1];
+        if (nm && id) rIdToName[id] = nm;
+      }
+      const rIdToTarget = {};
+      const relRe = /<Relationship\b([^>]*)>/g;
+      while ((m = relRe.exec(relsXml)) !== null) {
+        const attrs = m[1];
+        const id  = (attrs.match(/\bId="([^"]*)"/)     || [])[1];
+        const tgt = (attrs.match(/\bTarget="([^"]*)"/) || [])[1];
+        if (id && tgt) rIdToTarget[id] = tgt;
+      }
+      const result = {};
+      for (const [rId, name] of Object.entries(rIdToName)) {
+        const t = rIdToTarget[rId];
+        if (t) result[name] = t.startsWith('/') ? t.slice(1) : `xl/${t}`;
+      }
+      return result;
+    }
+
+    // シートXMLのデータ行(r>=2)から 列インデックス→スタイルindex を収集
+    function extractColStylesFromXml(sheetXml) {
+      const colStyles = {};
+      const re = /<c\b([^>]*)>/g;
+      let m;
+      while ((m = re.exec(sheetXml)) !== null) {
+        const attrs = m[1];
+        const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
+        if (!rM || parseInt(rM[2]) < 2) continue;
+        const sM = attrs.match(/\bs="(\d+)"/);
+        if (sM) {
+          const c = xlColToIdx(rM[1]);
+          if (!(c in colStyles)) colStyles[c] = parseInt(sM[1]);
+        }
+      }
+      return colStyles;
+    }
+
+    // SheetJSワークシートのデータ行(R>=1)をXML row文字列に変換
+    function generateDataRowsXml(ws, colStyles) {
+      if (!ws || !ws['!ref']) return '';
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const rows = [];
+      for (let R = 1; R <= range.e.r; R++) {
+        const xmlRow = R + 1; // header=1, data starts at 2
+        const cells = [];
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell || cell.v == null || cell.v === '') continue;
+          const ref = `${xlIdxToCol(C)}${xmlRow}`;
+          const sIdx = colStyles[C];
+          const sAttr = sIdx !== undefined ? ` s="${sIdx}"` : '';
+          const xml = sheetCellToXml(cell, ref, sAttr);
+          if (xml) cells.push(xml);
+        }
+        if (cells.length) rows.push(`<row r="${xmlRow}">${cells.join('')}</row>`);
+      }
+      return rows.join('');
+    }
+
+    function sheetCellToXml(cell, ref, sAttr) {
+      if (cell.t === 'n') return `<c r="${ref}"${sAttr}><v>${cell.v}</v></c>`;
+      if (cell.t === 'd' && cell.v instanceof Date) {
+        const d = cell.v;
+        const s = (Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+        return `<c r="${ref}"${sAttr}><v>${s}</v></c>`;
+      }
+      if (cell.t === 's' || cell.t === 'str') {
+        const v = String(cell.v ?? '');
+        if (!v) return sAttr ? `<c r="${ref}"${sAttr}/>` : '';
+        const esc = v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<c r="${ref}" t="inlineStr"${sAttr}><is><t>${esc}</t></is></c>`;
+      }
+      if (cell.t === 'b') return `<c r="${ref}" t="b"${sAttr}><v>${cell.v?1:0}</v></c>`;
+      return '';
+    }
+
+    // sheetData 内のデータ行を差し替え。ヘッダー行 r="1" は保持
+    function replaceSheetDataRows(sheetXml, newRowsXml) {
+      if (/<sheetData\s*\/>/.test(sheetXml)) {
+        return sheetXml.replace(/<sheetData\s*\/>/, `<sheetData>${newRowsXml}</sheetData>`);
+      }
+      return sheetXml.replace(
+        /(<sheetData[^>]*>)([\s\S]*?)(<\/sheetData>)/,
+        (_, open, content, close) => {
+          const hdr = (content.match(/<row\b[^>]*\br="1"[^>]*>[\s\S]*?<\/row>/) || [''])[0];
+          return `${open}${hdr}${newRowsXml}${close}`;
+        }
+      );
+    }
+
+    // <dimension ref="..."/> を実データ範囲で上書き
+    function updateSheetDimension(sheetXml, refStr) {
+      if (!refStr) return sheetXml;
+      if (/<dimension\b[^>]*\/>/.test(sheetXml)) {
+        return sheetXml.replace(/<dimension\b[^>]*\/>/, `<dimension ref="${refStr}"/>`);
+      }
+      if (/<dimension\b[^>]*>[\s\S]*?<\/dimension>/.test(sheetXml)) {
+        return sheetXml.replace(/<dimension\b[^>]*>[\s\S]*?<\/dimension>/, `<dimension ref="${refStr}"/>`);
+      }
+      return sheetXml;
+    }
+
+    // テンプレートZIPを直接編集して出力xlsxを生成（指定シートのみデータ差し替え、他は保持）
+    async function generateOutputPreservingTemplate(templateBytes, destWb, sheetNames) {
+      if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
+        console.warn('JSZip未ロード → SheetJS writeにフォールバック（スタイルは失われます）');
+        return new Uint8Array(XLSX.write(destWb, { type: 'array', bookType: 'xlsx' }));
+      }
+      const zip = await JSZip.loadAsync(templateBytes.buffer ?? templateBytes);
+      const sheetPaths = await getSheetPaths(zip);
+      for (const name of sheetNames) {
+        const path = sheetPaths[name];
+        if (!path || !zip.file(path)) { console.warn(`シート「${name}」のXMLが見つかりません`); continue; }
+        const sheetXml = await zip.file(path).async('string');
+        const colStyles = extractColStylesFromXml(sheetXml);
+        const ws = destWb.Sheets[name];
+        let xml = replaceSheetDataRows(sheetXml, generateDataRowsXml(ws, colStyles));
+        xml = updateSheetDimension(xml, ws && ws['!ref']);
+        zip.file(path, xml);
+      }
+      return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+    }
+
+    // =====================================================
+    // UI
+    // =====================================================
+    const yearInput        = document.getElementById('yearInput');
+    const ledgerFileInput  = document.getElementById('ledgerFileInput');
+    const ledgerFileRow    = document.getElementById('ledgerFileRow');
+    const ledgerFileLabel  = document.getElementById('ledgerFileLabel');
+    const masterFileInput  = document.getElementById('masterFileInput');
+    const masterFileRow    = document.getElementById('masterFileRow');
+    const masterFileLabel  = document.getElementById('masterFileLabel');
+    const execBtn          = document.getElementById('execBtn');
+    const progress         = document.getElementById('progress');
+    const successBox       = document.getElementById('successBox');
+    const successDetail    = document.getElementById('successDetail');
+    const errorBox         = document.getElementById('errorBox');
+    const errorMsg         = document.getElementById('errorMsg');
+    const downloadArea     = document.getElementById('downloadArea');
+    const dlOutput         = document.getElementById('dlOutput');
+
+    let ledgerFile = null, masterFile = null;
+    const depFiles = [null, null, null, null, null, null];
+
+    function setupFileDrop(rowEl, onFile) {
+      rowEl.addEventListener('dragover', e => { e.preventDefault(); rowEl.classList.add('border-indigo-500', 'bg-indigo-50'); });
+      rowEl.addEventListener('dragleave', () => rowEl.classList.remove('border-indigo-500', 'bg-indigo-50'));
+      rowEl.addEventListener('drop', e => {
+        e.preventDefault();
+        rowEl.classList.remove('border-indigo-500', 'bg-indigo-50');
+        const f = e.dataTransfer.files[0];
+        if (f) onFile(f);
+      });
+    }
+
+    function selectLedgerFile(f) {
+      ledgerFile = f;
+      ledgerFileLabel.textContent = f.name;
+      ledgerFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+      updateExecBtn();
+    }
+    ledgerFileInput.addEventListener('change', e => { if (e.target.files[0]) selectLedgerFile(e.target.files[0]); });
+    ledgerFileRow.addEventListener('click', () => ledgerFileInput.click());
+    setupFileDrop(ledgerFileRow, selectLedgerFile);
+
+    function selectMasterFile(f) {
+      masterFile = f;
+      masterFileLabel.textContent = f.name;
+      masterFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+      updateExecBtn();
+    }
+    masterFileInput.addEventListener('change', e => { if (e.target.files[0]) selectMasterFile(e.target.files[0]); });
+    masterFileRow.addEventListener('click', () => masterFileInput.click());
+    setupFileDrop(masterFileRow, selectMasterFile);
+
+    // 償却シミュレーション 6ファイル分
+    for (let i = 1; i <= 6; i++) {
+      const idx         = i - 1;
+      const fileInputEl = document.getElementById('depFileInput' + i);
+      const fileRowEl   = document.getElementById('depFileRow' + i);
+      const fileLabelEl = document.getElementById('depFileLabel' + i);
+      const yearInputEl = document.getElementById('depYearInput' + i);
+      yearInputEl.dataset.auto = 'true';
+
+      const selectDepFile = f => {
+        depFiles[idx] = f;
+        fileLabelEl.textContent = f.name;
+        fileLabelEl.classList.replace('text-slate-400', 'text-slate-700');
+        updateExecBtn();
+      };
+      fileInputEl.addEventListener('change', e => { if (e.target.files[0]) selectDepFile(e.target.files[0]); });
+      fileRowEl.addEventListener('click', () => fileInputEl.click());
+      setupFileDrop(fileRowEl, selectDepFile);
+      yearInputEl.addEventListener('input', () => { yearInputEl.dataset.auto = 'false'; updateExecBtn(); });
+    }
+
+    // 年度入力に応じて償却シミュレーション6ファイルの年度を自動採番（手動編集済みの欄は上書きしない）
+    yearInput.addEventListener('input', () => {
+      const base = Number(yearInput.value);
+      if (yearInput.value !== '' && !Number.isNaN(base)) {
+        for (let i = 1; i <= 6; i++) {
+          const el = document.getElementById('depYearInput' + i);
+          if (el.dataset.auto !== 'false') el.value = base - (i - 1);
+        }
+      }
+      updateExecBtn();
+    });
+
+    function updateExecBtn() {
+      const depFilesOk = depFiles.every(f => f);
+      const depYearsOk = Array.from({ length: 6 }, (_, i) => document.getElementById('depYearInput' + (i + 1)).value !== '').every(Boolean);
+      execBtn.disabled = !(yearInput.value !== '' && ledgerFile && masterFile && depFilesOk && depYearsOk);
+    }
+
+    function setStep(n, state) {
+      const icon = document.getElementById('step' + n + 'Icon');
+      const row  = document.getElementById('step' + n + 'Row');
+      if (state === 'active') {
+        icon.textContent = '▶';
+        row.classList.remove('text-slate-400', 'text-slate-500');
+        row.classList.add('text-slate-800');
+      } else if (state === 'done') {
+        icon.textContent = '✓';
+        row.classList.remove('text-slate-800', 'text-slate-400', 'text-slate-500');
+        row.classList.add('text-emerald-600');
+      }
+    }
+
+    function resetStatus() {
+      successBox.style.display = 'none';
+      errorBox.style.display = 'none';
+      downloadArea.style.display = 'none';
+      progress.style.display = 'none';
+      if (dlOutput._objUrl) { URL.revokeObjectURL(dlOutput._objUrl); dlOutput._objUrl = null; }
+    }
+
+    execBtn.addEventListener('click', async () => {
+      if (execBtn.disabled) return;
+      execBtn.disabled = true;
+      execBtn.textContent = '処理中...';
+      resetStatus();
+      progress.style.display = 'block';
+
+      try {
+        const yearValue = Number(yearInput.value);
+
+        // Step 1: 固定資産台帳を整形
+        setStep(1, 'active'); await tick();
+        const ledgerBytes = new Uint8Array(await ledgerFile.arrayBuffer());
+        const ledgerResult = processKoteishisanDaicho(ledgerBytes, yearValue);
+        setStep(1, 'done');
+
+        // Step 2: 償却シミュレーション（6ファイル）を整形
+        setStep(2, 'active'); await tick();
+        const depResults = [];
+        for (let i = 0; i < 6; i++) {
+          const bytes = new Uint8Array(await depFiles[i].arrayBuffer());
+          const depYear = Number(document.getElementById('depYearInput' + (i + 1)).value);
+          depResults.push(processShoukyaku(bytes, depYear, `ファイル${i + 1}`));
+        }
+        setStep(2, 'done');
+
+        // Step 3: マスタファイルへ転記
+        setStep(3, 'active'); await tick();
+        const masterBytes = new Uint8Array(await masterFile.arrayBuffer());
+        const { wb: destWb } = readWorkbook(masterBytes);
+
+        const shisanWs = destWb.Sheets['資産台帳'];
+        if (!shisanWs) throw new Error('マスタファイルに「資産台帳」シートが見つかりません。');
+        const bgIdx = xlColToIdx('BG');
+        const { removed } = removeRowsByYear(shisanWs, bgIdx, yearValue);
+        const shisanAppended = appendRowsToSheet(ledgerResult.ws, shisanWs, 0, bgIdx);
+
+        const shoukyakuWs = destWb.Sheets['償却シミュレーション'];
+        if (!shoukyakuWs) throw new Error('マスタファイルに「償却シミュレーション」シートが見つかりません。');
+        clearSheetRows(destWb, '償却シミュレーション');
+        let shoukyakuAppended = 0;
+        for (const r of depResults) shoukyakuAppended += appendRowsToSheet(r.ws, shoukyakuWs, 0, 23);
+
+        const output = await generateOutputPreservingTemplate(masterBytes, destWb, ['資産台帳', '償却シミュレーション']);
+        setStep(3, 'done');
+
+        const baseName = masterFile.name.replace(/\.[^.]+$/, '');
+        const outName = baseName + '_更新済.xlsx';
+        const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        dlOutput._objUrl = url; dlOutput.href = url; dlOutput.download = outName;
+
+        successDetail.textContent = `${outName} を生成しました`
+          + `（固定資産台帳: ${ledgerResult.lastRow}行中${ledgerResult.taggedRows}行に${yearValue}年度を設定し資産台帳シートへ${shisanAppended}行追加 / `
+          + `資産台帳シート内の${yearValue}年度データ${removed}行を置換 / `
+          + `償却シミュレーション: 6ファイル合計${shoukyakuAppended}行を再構築）`;
+        successBox.style.display = 'flex';
+        downloadArea.style.display = 'block';
+
+      } catch (e) {
+        errorMsg.textContent = '処理エラー: ' + e.message;
+        errorBox.style.display = 'flex';
+      } finally {
+        execBtn.disabled = false;
+        execBtn.textContent = '実行';
+        updateExecBtn();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -2,3 +2,6 @@
 node_modules/
 .claude/
 vba_source/
+vba_source.txt
+*.xlsx
+*.xls
