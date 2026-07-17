@@ -618,8 +618,9 @@
     }
 
     // シートXMLのデータ行(r>=2)から 列インデックス→スタイルindex を収集
+    // 列ごとに最も出現頻度の高いスタイルを採用する（先頭行だけだと1行目のみの例外的な書式を拾ってしまうため）
     function extractColStylesFromXml(sheetXml) {
-      const colStyles = {};
+      const counts = {};
       const re = /<c\b([^>]*)>/g;
       let m;
       while ((m = re.exec(sheetXml)) !== null) {
@@ -627,10 +628,19 @@
         const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
         if (!rM || parseInt(rM[2]) < 2) continue;
         const sM = attrs.match(/\bs="(\d+)"/);
-        if (sM) {
-          const c = xlColToIdx(rM[1]);
-          if (!(c in colStyles)) colStyles[c] = parseInt(sM[1]);
+        if (!sM) continue;
+        const c = xlColToIdx(rM[1]);
+        const s = parseInt(sM[1]);
+        if (!counts[c]) counts[c] = {};
+        counts[c][s] = (counts[c][s] || 0) + 1;
+      }
+      const colStyles = {};
+      for (const c in counts) {
+        let bestStyle = null, bestCount = -1;
+        for (const s in counts[c]) {
+          if (counts[c][s] > bestCount) { bestCount = counts[c][s]; bestStyle = Number(s); }
         }
+        colStyles[c] = bestStyle;
       }
       return colStyles;
     }
@@ -801,11 +811,15 @@
       if (yearInput.value !== '' && !Number.isNaN(base)) {
         for (let i = 1; i <= 6; i++) {
           const el = document.getElementById('depYearInput' + i);
-          if (el.dataset.auto !== 'false') el.value = base - (i - 1);
+          if (el.dataset.auto !== 'false') el.value = base + (i - 1);
         }
       }
       updateExecBtn();
     });
+
+    // 初期表示: 年度欄に現在の年をセット
+    yearInput.value = new Date().getFullYear();
+    yearInput.dispatchEvent(new Event('input'));
 
     function updateExecBtn() {
       const depFilesOk = depFiles.every(f => f);
