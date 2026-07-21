@@ -16,7 +16,7 @@
 
     <div class="mb-4">
       <h1 class="text-lg font-bold text-slate-800">固定資産台帳 更新ツール</h1>
-      <p class="text-slate-500 text-sm mt-1">固定資産台帳と償却シミュレーション（6ファイル）を整形し、マスタファイルへ一括転記します。</p>
+      <p class="text-slate-500 text-sm mt-1">固定資産台帳と償却シミュレーション（6ファイル）、投資案件一覧を整形し、マスタファイルへ一括転記します。</p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -137,12 +137,29 @@
           </div>
         </div>
 
-        <!-- 出力先マスタファイル -->
+        <!-- 投資案件一覧ファイル -->
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">
-            出力先マスタファイル <span class="text-red-500">*</span>
+            投資案件一覧ファイル <span class="text-red-500">*</span>
           </label>
-          <p class="text-xs text-slate-400 mb-2">「資産台帳」「償却シミュレーション」シートを持つ既存ブック</p>
+          <p class="text-xs text-slate-400 mb-2">5シート（期中追加【ＩＴ起案】/期中追加分【部門依頼分】/ＩＴ起案分/部門依頼分/前年度からの持越し分）を持つブック。各シートの対象行をまとめて転記します</p>
+          <label for="caseListFileInput" id="caseListFileRow"
+            class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <span id="caseListFileLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+            <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+          </label>
+          <input type="file" id="caseListFileInput" accept=".xlsx,.xls" class="hidden">
+        </div>
+
+        <!-- 出力先の資産台帳 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            出力先の資産台帳 <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-400 mb-2">最新の資産台帳</p>
           <label for="masterFileInput" id="masterFileRow"
             class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
             <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -170,6 +187,9 @@
           </div>
           <div id="step3Row" class="flex items-center gap-2 text-sm text-slate-400">
             <span id="step3Icon">○</span><span>ステップ3: マスタファイルへ転記中...</span>
+          </div>
+          <div id="step4Row" class="flex items-center gap-2 text-sm text-slate-400">
+            <span id="step4Icon">○</span><span>ステップ4: 投資案件一覧をマスタへ転記中...</span>
           </div>
         </div>
 
@@ -211,13 +231,14 @@
     // =====================================================
     // 共通ユーティリティ: Excelファイル読み込み（月次作業ツールと同一ロジック）
     // =====================================================
-    function readWorkbook(bytes) {
+    function readWorkbook(bytes, extraOpts) {
+      extraOpts = extraOpts || {};
       const b0 = bytes[0], b1 = bytes[1], b2 = bytes[2];
       if (b0 === 0x50 && b1 === 0x4B) {
-        return { fmt: 'xlsx(ZIP)',  wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+        return { fmt: 'xlsx(ZIP)',  wb: XLSX.read(bytes, Object.assign({ type: 'array', cellNF: true, codepage: 932 }, extraOpts)) };
       }
       if (b0 === 0xD0 && b1 === 0xCF) {
-        return { fmt: 'xls(OLE2)', wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+        return { fmt: 'xls(OLE2)', wb: XLSX.read(bytes, Object.assign({ type: 'array', cellNF: true, codepage: 932 }, extraOpts)) };
       }
       let text, fmt;
       if (b0 === 0xEF && b1 === 0xBB && b2 === 0xBF) {
@@ -233,7 +254,7 @@
         fmt  = 'text(CP932/Shift-JIS)';
         text = new TextDecoder('shift-jis').decode(bytes);
       }
-      return { fmt, wb: XLSX.read(text, { type: 'string', cellNF: true }) };
+      return { fmt, wb: XLSX.read(text, Object.assign({ type: 'string', cellNF: true }, extraOpts)) };
     }
 
     // 元ファイルにオートフィルタ/非表示行が残っていると処理漏れの原因になるため除去
@@ -587,6 +608,341 @@
     }
 
     // =====================================================
+    // 投資案件一覧 → マスタ「案件一覧」シートへの転記（VBAには無い新規要件）
+    // =====================================================
+    const CASE_LIST_DEST_SHEET   = '案件一覧';
+    // シート名は完全一致で照合。「◯◯年度からの持越し分」のみ年度部分が毎年変わるためパターン照合する
+    const CASE_LIST_SHEET_SPECS = [
+      { label: '期中追加【ＩＴ起案】',      match: name => name === '期中追加【ＩＴ起案】' },
+      { label: '期中追加分【部門依頼分】',   match: name => name === '期中追加分【部門依頼分】' },
+      { label: 'ＩＴ起案分',              match: name => name === 'ＩＴ起案分' },
+      { label: '部門依頼分',              match: name => name === '部門依頼分' },
+      { label: '◯◯年度からの持越し分',     match: name => /^\d{4}年度からの持越し分$/.test(name) },
+    ];
+    const CASE_LIST_COPY_COLS    = ['A','B','C','D','E','F','G','H','I','J','M','P','Q'].map(xlColToIdx);
+    const CASE_LIST_FORMULA_COLS = ['K','L','N','O','R','S','T','U','V','W'].map(xlColToIdx);
+    const CASE_LIST_KEY_COL      = xlColToIdx('B'); // 管理№: 行にデータがあるかどうかの判定に使う
+    const CASE_LIST_COLOR_COL    = xlColToIdx('F'); // 案件名列の背景色で対象外を判定
+    const CASE_LIST_EXCLUDE_COLORS = new Set(['BFBFBF', 'FF6699']);
+    const CASE_LIST_ALL_COLS = Array.from(
+      { length: Math.max(...CASE_LIST_COPY_COLS, ...CASE_LIST_FORMULA_COLS) + 1 },
+      (_, i) => i
+    );
+
+    // テーマカラー(theme+tint)をRGBに変換する。SheetJS内部のrgb_tint等と同じ計算式（ECMA-376 18.8.3）。
+    // SheetJS 0.18.5は `fgColor.theme` が 0（背景1等）の場合に `theme && !rgb` の判定でfalsy扱いされ、
+    // rgb変換を行わずに`fgColor.rgb`が未設定のまま残るバグがあるため、こちらで独自に解決する。
+    function hex2rgbArr(hex) {
+      const o = hex.slice(hex[0] === '#' ? 1 : 0).slice(0, 6);
+      return [parseInt(o.slice(0, 2), 16), parseInt(o.slice(2, 4), 16), parseInt(o.slice(4, 6), 16)];
+    }
+    function rgbArr2hex(rgb) {
+      let o = 1;
+      for (let i = 0; i !== 3; ++i) o = o * 256 + Math.max(0, Math.min(255, rgb[i]));
+      return o.toString(16).toUpperCase().slice(1);
+    }
+    function rgb2hsl(rgb) {
+      const R = rgb[0] / 255, G = rgb[1] / 255, B = rgb[2] / 255;
+      const M = Math.max(R, G, B), m = Math.min(R, G, B), C = M - m;
+      if (C === 0) return [0, 0, R];
+      let H6 = 0;
+      const L2 = M + m;
+      const S = C / (L2 > 1 ? 2 - L2 : L2);
+      if (M === R) H6 = ((G - B) / C + 6) % 6;
+      else if (M === G) H6 = (B - R) / C + 2;
+      else H6 = (R - G) / C + 4;
+      return [H6 / 6, S, L2 / 2];
+    }
+    function hsl2rgb(hsl) {
+      const H = hsl[0], S = hsl[1], L = hsl[2];
+      const C = S * 2 * (L < 0.5 ? L : 1 - L), m = L - C / 2;
+      const rgb = [m, m, m];
+      const h6 = 6 * H;
+      let X;
+      if (S !== 0) {
+        switch (h6 | 0) {
+          case 0: case 6: X = C * h6; rgb[0] += C; rgb[1] += X; break;
+          case 1: X = C * (2 - h6);   rgb[0] += X; rgb[1] += C; break;
+          case 2: X = C * (h6 - 2);   rgb[1] += C; rgb[2] += X; break;
+          case 3: X = C * (4 - h6);   rgb[1] += X; rgb[2] += C; break;
+          case 4: X = C * (h6 - 4);   rgb[2] += C; rgb[0] += X; break;
+          case 5: X = C * (6 - h6);   rgb[2] += X; rgb[0] += C; break;
+        }
+      }
+      for (let i = 0; i !== 3; ++i) rgb[i] = Math.round(rgb[i] * 255);
+      return rgb;
+    }
+    function applyThemeTint(hex, tint) {
+      if (!tint) return hex;
+      const hsl = rgb2hsl(hex2rgbArr(hex));
+      hsl[2] = tint < 0 ? hsl[2] * (1 + tint) : 1 - (1 - hsl[2]) * (1 - tint);
+      return rgbArr2hex(hsl2rgb(hsl));
+    }
+    // ワークブックのテーマカラースキーム(wb.Themes.themeElements.clrScheme)を取得。無ければnull
+    function getThemeClrScheme(wb) {
+      return (wb.Themes && wb.Themes.themeElements && wb.Themes.themeElements.clrScheme) || null;
+    }
+
+    // セルの塗りつぶし色（cellStyles:trueで読み込んだ場合の cell.s）をARGB(6桁,大文字)で返す。
+    // themeClrScheme指定時は、SheetJSが解決し損ねたテーマカラー(theme:0を含む)もtintを適用して解決する
+    function getSolidFillArgb(cell, themeClrScheme) {
+      if (!cell || !cell.s || cell.s.patternType !== 'solid') return null;
+      const fg = cell.s.fgColor;
+      if (!fg) return null;
+      let rgb = fg.rgb;
+      if (!rgb && fg.theme != null && themeClrScheme && themeClrScheme[fg.theme]) {
+        rgb = applyThemeTint(themeClrScheme[fg.theme].rgb, fg.tint || 0);
+      }
+      if (!rgb) return null; // 解決できない色指定は対象外
+      return (rgb.length > 6 ? rgb.slice(-6) : rgb).toUpperCase();
+    }
+
+    // セルの塗りつぶし色が除外対象色か判定
+    function isCaseExcludedByColor(cell, themeClrScheme) {
+      const argb = getSolidFillArgb(cell, themeClrScheme);
+      return argb ? CASE_LIST_EXCLUDE_COLORS.has(argb) : false;
+    }
+
+    // シート名の完全一致 or パターンで対象シートを1つ特定する（該当なし・複数該当はエラー）
+    function resolveCaseListSheetName(caseWb, spec) {
+      const matches = caseWb.SheetNames.filter(spec.match);
+      if (matches.length === 0) throw new Error(`投資案件一覧ファイルに「${spec.label}」に該当するシートが見つかりません。`);
+      if (matches.length > 1) throw new Error(`投資案件一覧ファイルに「${spec.label}」に該当するシートが複数見つかりました（${matches.join('、')}）。シート構成を確認してください。`);
+      return matches[0];
+    }
+
+    // セル結合(マージ)されている場合、アンカー(左上)以外のセルは実際には空セルなので、
+    // マージ範囲内であればアンカーセルの値を返す（案件一覧・投資案件一覧とも同一案件のグループ化にマージが使われるため）
+    function resolveMergedCell(ws, r, c) {
+      const merges = ws['!merges'];
+      if (merges) {
+        for (const m of merges) {
+          if (r >= m.s.r && r <= m.e.r && c >= m.s.c && c <= m.e.c) {
+            return ws[XLSX.utils.encode_cell({ r: m.s.r, c: m.s.c })] || null;
+          }
+        }
+      }
+      return ws[XLSX.utils.encode_cell({ r, c })] || null;
+    }
+
+    // 投資案件一覧ファイルの5シートから、F列背景色が除外色でない行のA~J,M,P,Q列を集約する
+    // （5シート以外の余分なシートが含まれていても無視する）
+    function collectCaseListRows(caseWb) {
+      const themeClrScheme = getThemeClrScheme(caseWb);
+      const collected = [];
+      let totalRows = 0, excludedRows = 0;
+      for (const spec of CASE_LIST_SHEET_SPECS) {
+        const sheetName = resolveCaseListSheetName(caseWb, spec);
+        const ws = caseWb.Sheets[sheetName];
+        if (!ws || !ws['!ref']) throw new Error(`投資案件一覧ファイルの「${sheetName}」シートにデータがありません。`);
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = 1; R <= range.e.r; R++) {
+          const keyCell = resolveMergedCell(ws, R, CASE_LIST_KEY_COL);
+          if (!keyCell || keyCell.v === undefined || keyCell.v === null || keyCell.v === '') continue;
+          totalRows++;
+          const colorCell = resolveMergedCell(ws, R, CASE_LIST_COLOR_COL);
+          if (isCaseExcludedByColor(colorCell, themeClrScheme)) { excludedRows++; continue; }
+          const row = {};
+          for (const c of CASE_LIST_COPY_COLS) {
+            const cell = resolveMergedCell(ws, R, c);
+            if (cell) {
+              const argb = getSolidFillArgb(cell, themeClrScheme);
+              if (argb) cell._fillRgb = argb; // 転記先セルにも背景色を引き継ぐためのマーカー
+            }
+            row[c] = cell || null;
+          }
+          collected.push(row);
+        }
+      }
+      return { collected, totalRows, excludedRows };
+    }
+
+    // Excel数式の行参照を shiftRows ぶんだけ増減させる（Excelのオートフィルと同じ考え方）。
+    // $付きの行参照(絶対参照)はずらさない。ダブルクォート内の文字列リテラルは変更しない。
+    function shiftFormulaRows(formula, shiftRows) {
+      if (!formula || !shiftRows) return formula;
+      const cellRefRe = /^(\$?)([A-Za-z]{1,3})(\$?)(\d{1,7})(?!\()/;
+      let result = '', i = 0;
+      const len = formula.length;
+      while (i < len) {
+        const ch = formula[i];
+        if (ch === '"') {
+          let j = i + 1;
+          while (j < len) {
+            if (formula[j] === '"') { if (formula[j + 1] === '"') { j += 2; continue; } j += 1; break; }
+            j += 1;
+          }
+          result += formula.slice(i, j);
+          i = j;
+          continue;
+        }
+        const prevCh = i > 0 ? formula[i - 1] : '';
+        if (/[A-Za-z0-9_$]/.test(prevCh)) { result += ch; i += 1; continue; }
+        const m = cellRefRe.exec(formula.slice(i));
+        if (m) {
+          const [whole, colAbs, col, rowAbs, rowStr] = m;
+          if (rowAbs === '$') {
+            result += whole;
+          } else {
+            result += `${colAbs}${col}${rowAbs}${parseInt(rowStr, 10) + shiftRows}`;
+          }
+          i += whole.length;
+          continue;
+        }
+        result += ch; i += 1;
+      }
+      return result;
+    }
+
+    // 数式列(K,L,N,O,R,S,T,U,V,W)の既存データ行から代表的な数式を抽出する（2行目基準に正規化した上での多数決）。
+    // 一部の行だけ例外的な数式になっていても、多数派の数式パターンを採用する
+    // （列スタイルの最頻値採用と同じ考え方: 先頭行だけを信用しない）
+    function extractFormulaTemplates(ws, formulaCols) {
+      const templates = {};
+      if (!ws || !ws['!ref']) { formulaCols.forEach(c => templates[c] = null); return templates; }
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (const c of formulaCols) {
+        const counts = {};
+        for (let R = 1; R <= range.e.r; R++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c })];
+          if (!cell || !cell.f) continue;
+          const canonical = shiftFormulaRows(cell.f, 1 - R); // R行目(0始まり,データ1行目=1)を2行目基準に正規化
+          counts[canonical] = (counts[canonical] || 0) + 1;
+        }
+        let best = null, bestCount = -1;
+        for (const f in counts) if (counts[f] > bestCount) { bestCount = counts[f]; best = f; }
+        templates[c] = best;
+      }
+      return templates;
+    }
+
+    // 2行目基準の正規化済み数式(canonical)を、ws内の行番号R(0始まり,データ1行目=1)向けに戻す
+    function formulaForRow(canonical, R) {
+      return shiftFormulaRows(canonical, R - 1);
+    }
+
+    // 削除前の案件一覧シートから、B列(管理№)をキーにC列(期初№)・D列(担当)を集める。
+    // 同じB値の行が複数（分割案件等）ある場合は出現順に配列で保持する
+    function extractCaseListCarryForward(ws) {
+      const map = new Map();
+      if (!ws || !ws['!ref']) return map;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const cIdx = xlColToIdx('C'), dIdx = xlColToIdx('D');
+      for (let R = 1; R <= range.e.r; R++) {
+        const bCell = resolveMergedCell(ws, R, CASE_LIST_KEY_COL);
+        if (!bCell || bCell.v == null || bCell.v === '') continue;
+        const key = String(bCell.v);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push({
+          c: resolveMergedCell(ws, R, cIdx),
+          d: resolveMergedCell(ws, R, dIdx),
+        });
+      }
+      return map;
+    }
+
+    // 転記後の各行のB列値をキーに、削除前のC,D列を出現順に対応付けて引き継ぐ（同じB値が複数あっても順に対応）
+    // 新データの件数が旧データの件数を超える場合（今回分割が増えた等）は、最後の対応値を使い回す
+    // （同じ管理№＝同一案件である以上、期初№・担当は共通のはずのため）
+    function applyCaseListCarryForward(collectedRows, carryMap) {
+      const cIdx = xlColToIdx('C'), dIdx = xlColToIdx('D');
+      const cursor = new Map();
+      let matched = 0;
+      collectedRows.forEach(row => {
+        const bCell = row[CASE_LIST_KEY_COL];
+        const key = bCell && bCell.v != null ? String(bCell.v) : null;
+        if (!key || !carryMap.has(key)) return;
+        const list = carryMap.get(key);
+        const i = cursor.get(key) || 0;
+        cursor.set(key, i + 1);
+        const prev = list[Math.min(i, list.length - 1)];
+        row[cIdx] = prev.c ? cleanCellForCopy(prev.c) : null;
+        row[dIdx] = prev.d ? cleanCellForCopy(prev.d) : null;
+        matched++;
+      });
+      return matched;
+    }
+
+    // 削除前の案件一覧シートで、B列(管理№)が入っている最後の行(0始まり,ヘッダー除く)を返す。
+    // それより下の行は「総額」等の集計行とみなし、削除・上書き対象外として保持する
+    function findCaseListLastDataRow(ws) {
+      if (!ws || !ws['!ref']) return 0;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      let last = 0;
+      for (let R = 1; R <= range.e.r; R++) {
+        const bCell = resolveMergedCell(ws, R, CASE_LIST_KEY_COL);
+        if (bCell && bCell.v != null && bCell.v !== '') last = R;
+      }
+      return last;
+    }
+
+    // 案件一覧シート下部の「総額」等、B列が空の末尾行の件数
+    function countCaseListFooterRows(ws) {
+      if (!ws || !ws['!ref']) return 0;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      return Math.max(0, range.e.r - findCaseListLastDataRow(ws));
+    }
+
+    // 削除前の案件一覧シート下部の「総額」等の行を、生XMLのまま抽出し、
+    // 転記後データの末尾に来るよう行番号だけ振り直す（値・数式・スタイルはそのまま維持、削除・上書きしない）
+    function extractCaseListFooterRowsXml(ws, sheetXml, dataRowCount) {
+      const lastDataRow = findCaseListLastDataRow(ws); // 0始まり
+      const oldFooterStartXmlRow = lastDataRow + 2; // 旧シートでの1始まりXML行番号
+      const rowRe = /<row r="(\d+)"[^>]*>[\s\S]*?<\/row>/g;
+      const footerRowsXml = [];
+      let m;
+      while ((m = rowRe.exec(sheetXml)) !== null) {
+        if (parseInt(m[1], 10) >= oldFooterStartXmlRow) footerRowsXml.push(m[0]);
+      }
+      const newStart = dataRowCount + 2; // 新シートでの1始まりXML行番号
+      return footerRowsXml.map((rowXml, i) => {
+        const newR = newStart + i;
+        let xml = rowXml.replace(/^<row r="\d+"/, `<row r="${newR}"`);
+        xml = xml.replace(/\br="([A-Za-z]{1,3})\d+"/g, (_, col) => `r="${col}${newR}"`);
+        // 削除したデータ行側にあった共有数式のマスタ参照(si)が消えるとExcelが破損扱いするため、
+        // フッター行に紛れ込んだ数式(通常/共有とも)は除去し、キャッシュ済みの<v>値のみ残す
+        xml = xml.replace(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/g, '');
+        return xml;
+      }).join('');
+    }
+
+    // 案件一覧シート用のデータ行XML生成。A~J,M,P,Q列は転記データ（背景色があれば列書式を保ったまま引き継ぐ）、
+    // K,L,N,O,R,S,T,U,V,W列はテンプレート数式をオートフィルして出力
+    // colorXfIdx: `${CASE_LIST_DEST_SHEET}:${列idx}:${ARGB}` → スタイルindex（generateOutputPreservingTemplateが作成）
+    function generateCaseListDataRowsXml(collectedRows, colStyles, formulaTemplates, colorXfIdx = {}) {
+      const copySet = new Set(CASE_LIST_COPY_COLS);
+      const formulaSet = new Set(CASE_LIST_FORMULA_COLS);
+      const rows = [];
+      collectedRows.forEach((rowObj, i) => {
+        const R = i + 1; // ws内の行番号(0始まり,データ1行目=1)
+        const xmlRow = R + 1; // XML上の行番号(ヘッダー=1)
+        const cells = [];
+        for (const c of CASE_LIST_ALL_COLS) {
+          const ref = `${xlIdxToCol(c)}${xmlRow}`;
+          const sIdx = colStyles[c];
+          const sAttr = sIdx !== undefined ? ` s="${sIdx}"` : '';
+          if (copySet.has(c)) {
+            const cell = rowObj[c];
+            if (!cell || cell.v == null || cell.v === '') continue;
+            const colorKey = cell._fillRgb ? `${CASE_LIST_DEST_SHEET}:${c}:${cell._fillRgb}` : null;
+            const cellSIdx = (colorKey && colorXfIdx[colorKey] !== undefined) ? colorXfIdx[colorKey] : sIdx;
+            const cellSAttr = cellSIdx !== undefined ? ` s="${cellSIdx}"` : '';
+            const xml = sheetCellToXml(cell, ref, cellSAttr);
+            if (xml) cells.push(xml);
+          } else if (formulaSet.has(c)) {
+            const template = formulaTemplates[c];
+            if (!template) continue;
+            const formula = formulaForRow(template, R)
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            cells.push(`<c r="${ref}"${sAttr}><f>${formula}</f></c>`);
+          }
+        }
+        if (cells.length) rows.push(`<row r="${xmlRow}">${cells.join('')}</row>`);
+      });
+      return rows.join('');
+    }
+
+    // =====================================================
     // JSZipテンプレート方式での出力（他シート・書式を保持したまま該当シートのみ差し替え）
     // =====================================================
     async function getSheetPaths(zip) {
@@ -710,25 +1066,153 @@
       return sheetXml;
     }
 
+    // 列の元書式(数値書式・フォント等)を保ったまま、指定色の塗りつぶしを持つxfをstyles.xmlに追加する。
+    // colorRequests: [{ name, col, argb, baseXf }]。同一(baseXf,argb)の組み合わせは1つのxfにまとめる
+    function addColorFillStyles(stylesXml, colorRequests) {
+      if (!colorRequests.length) return { xml: stylesXml, colorXfIdx: {} };
+      const cellXfsM = stylesXml.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const cellXfsContent = cellXfsM ? cellXfsM[1] : '';
+      const getXf = (idx) => {
+        if (idx === undefined || idx === null) return null;
+        const re = /<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g;
+        let i = 0, m;
+        while ((m = re.exec(cellXfsContent)) !== null) { if (i++ === idx) return m[0]; }
+        return null;
+      };
+      const fallback = '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+      const cloneWithFill = (xfXml, fillId) => {
+        let s = xfXml;
+        s = /\bfillId="/.test(s) ? s.replace(/\bfillId="\d+"/, `fillId="${fillId}"`) : s.replace('<xf', `<xf fillId="${fillId}"`);
+        s = /\bapplyFill="/.test(s) ? s.replace(/\bapplyFill="\w+"/, 'applyFill="1"') : s.replace('<xf', '<xf applyFill="1"');
+        return s;
+      };
+
+      const uniqueArgbs = [...new Set(colorRequests.map(r => r.argb))];
+      const fillCount = (stylesXml.match(/<fill>/g) || []).length;
+      const newFills = uniqueArgbs.map(argb =>
+        `<fill><patternFill patternType="solid"><fgColor rgb="${argb}"/><bgColor indexed="64"/></patternFill></fill>`
+      ).join('');
+      let xml = stylesXml.replace('</fills>', newFills + '</fills>');
+      xml = xml.replace(/(<fills\b[^>]*\scount=")(\d+)"/, (_, p, n) => `${p}${+n + uniqueArgbs.length}"`);
+
+      const xfCount = (cellXfsContent.match(/<xf\b/g) || []).length;
+      const comboSeen = new Map(); // `${baseXf}::${argb}` → 新規xfIdx
+      const extraXfs = [];
+      const colorXfIdx = {};
+      colorRequests.forEach(r => {
+        const combo = `${r.baseXf ?? 'none'}::${r.argb}`;
+        let xfIdx = comboSeen.get(combo);
+        if (xfIdx === undefined) {
+          xfIdx = xfCount + extraXfs.length;
+          const fillIdx = fillCount + uniqueArgbs.indexOf(r.argb);
+          extraXfs.push(cloneWithFill(getXf(r.baseXf) ?? fallback, fillIdx));
+          comboSeen.set(combo, xfIdx);
+        }
+        colorXfIdx[`${r.name}:${r.col}:${r.argb}`] = xfIdx;
+      });
+
+      xml = xml.replace('</cellXfs>', extraXfs.join('') + '</cellXfs>');
+      xml = xml.replace(/(<cellXfs\b[^>]*\scount=")(\d+)"/, (_, p, n) => `${p}${+n + extraXfs.length}"`);
+
+      return { xml, colorXfIdx };
+    }
+
     // テンプレートZIPを直接編集して出力xlsxを生成（指定シートのみデータ差し替え、他は保持）
-    async function generateOutputPreservingTemplate(templateBytes, destWb, sheetNames) {
+    // sheetConfigs: { シート名: { ws?, refOverride?, extraArgbsByCol?, rowsXmlGenerator: (colStyles, colorXfIdx, sheetXml) => xml文字列 } }
+    async function generateOutputPreservingTemplate(templateBytes, destWb, sheetConfigs) {
       if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
         console.warn('JSZip未ロード → SheetJS writeにフォールバック（スタイルは失われます）');
         return new Uint8Array(XLSX.write(destWb, { type: 'array', bookType: 'xlsx' }));
       }
       const zip = await JSZip.loadAsync(templateBytes.buffer ?? templateBytes);
       const sheetPaths = await getSheetPaths(zip);
-      for (const name of sheetNames) {
+
+      const colStylesMap = {};
+      for (const name of Object.keys(sheetConfigs)) {
+        const path = sheetPaths[name];
+        if (!path || !zip.file(path)) continue;
+        colStylesMap[name] = extractColStylesFromXml(await zip.file(path).async('string'));
+      }
+
+      // セル背景色を反映する必要がある(シート,列,色)の組み合わせを収集し、列書式を保ったままstyles.xmlに追加する
+      const colorRequests = [];
+      for (const [name, cfg] of Object.entries(sheetConfigs)) {
+        if (!cfg.extraArgbsByCol) continue;
+        for (const [colStr, argbs] of Object.entries(cfg.extraArgbsByCol)) {
+          const col = Number(colStr);
+          for (const argb of new Set(argbs)) {
+            colorRequests.push({ name, col, argb, baseXf: (colStylesMap[name] || {})[col] });
+          }
+        }
+      }
+      let colorXfIdx = {};
+      if (colorRequests.length) {
+        const stylesFile = zip.file('xl/styles.xml');
+        if (stylesFile) {
+          const { xml: newStyles, colorXfIdx: cxi } = addColorFillStyles(await stylesFile.async('string'), colorRequests);
+          zip.file('xl/styles.xml', newStyles);
+          colorXfIdx = cxi;
+        }
+      }
+
+      for (const [name, cfg] of Object.entries(sheetConfigs)) {
         const path = sheetPaths[name];
         if (!path || !zip.file(path)) { console.warn(`シート「${name}」のXMLが見つかりません`); continue; }
         const sheetXml = await zip.file(path).async('string');
-        const colStyles = extractColStylesFromXml(sheetXml);
-        const ws = destWb.Sheets[name];
-        let xml = replaceSheetDataRows(sheetXml, generateDataRowsXml(ws, colStyles));
-        xml = updateSheetDimension(xml, ws && ws['!ref']);
+        const colStyles = colStylesMap[name] || {};
+        let xml = replaceSheetDataRows(sheetXml, cfg.rowsXmlGenerator(colStyles, colorXfIdx, sheetXml));
+        xml = updateSheetDimension(xml, cfg.refOverride || (cfg.ws && cfg.ws['!ref']));
         zip.file(path, xml);
       }
+      await forceFullCalcOnLoad(zip);
+      await removeCalcChain(zip);
       return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+    }
+
+    // calcChain.xmlは数式セルの再計算順序キャッシュ。シートのデータ行を直接書き換えて数式セルの
+    // 構成が変わると、古いcalcChain.xmlの内容と矛盾し、Excelで開いた際に
+    // 「削除されたレコード: 数式(計算のプロパティ)」という修復ダイアログが出てしまう。
+    // calcChain.xmlはExcelが開いたときに自動的に作り直すため、まるごと削除してしまうのが安全
+    async function removeCalcChain(zip) {
+      const path = 'xl/calcChain.xml';
+      if (zip.file(path)) zip.remove(path);
+
+      const ctPath = '[Content_Types].xml';
+      const ctFile = zip.file(ctPath);
+      if (ctFile) {
+        const ct = (await ctFile.async('string'))
+          .replace(/<Override\b[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/, '');
+        zip.file(ctPath, ct);
+      }
+
+      const relsPath = 'xl/_rels/workbook.xml.rels';
+      const relsFile = zip.file(relsPath);
+      if (relsFile) {
+        const rels = (await relsFile.async('string'))
+          .replace(/<Relationship\b[^>]*Target="calcChain\.xml"[^>]*\/>/, '');
+        zip.file(relsPath, rels);
+      }
+    }
+
+    // 新規に書き込んだ数式セルはキャッシュ値(<v>)を持たないため、計算モードが手動になっていても
+    // Excelで開いた瞬間に必ず再計算されるよう workbook.xml の calcPr に fullCalcOnLoad="1" を設定する
+    async function forceFullCalcOnLoad(zip) {
+      const path = 'xl/workbook.xml';
+      const file = zip.file(path);
+      if (!file) return;
+      const xml = await file.async('string');
+      let patched;
+      if (/<calcPr\b[^>]*\/>/.test(xml)) {
+        patched = xml.replace(/<calcPr\b([^>]*)\/>/, (m, attrs) => {
+          if (/\bfullCalcOnLoad=/.test(attrs)) return m.replace(/fullCalcOnLoad="[^"]*"/, 'fullCalcOnLoad="1"');
+          return `<calcPr${attrs} fullCalcOnLoad="1"/>`;
+        });
+      } else if (/<\/workbook>/.test(xml)) {
+        patched = xml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+      } else {
+        patched = xml;
+      }
+      zip.file(path, patched);
     }
 
     // =====================================================
@@ -738,6 +1222,9 @@
     const ledgerFileInput  = document.getElementById('ledgerFileInput');
     const ledgerFileRow    = document.getElementById('ledgerFileRow');
     const ledgerFileLabel  = document.getElementById('ledgerFileLabel');
+    const caseListFileInput = document.getElementById('caseListFileInput');
+    const caseListFileRow   = document.getElementById('caseListFileRow');
+    const caseListFileLabel = document.getElementById('caseListFileLabel');
     const masterFileInput  = document.getElementById('masterFileInput');
     const masterFileRow    = document.getElementById('masterFileRow');
     const masterFileLabel  = document.getElementById('masterFileLabel');
@@ -750,7 +1237,7 @@
     const downloadArea     = document.getElementById('downloadArea');
     const dlOutput         = document.getElementById('dlOutput');
 
-    let ledgerFile = null, masterFile = null;
+    let ledgerFile = null, masterFile = null, caseListFile = null;
     const depFiles = [null, null, null, null, null, null];
 
     function setupFileDrop(rowEl, onFile) {
@@ -783,6 +1270,16 @@
     masterFileInput.addEventListener('change', e => { if (e.target.files[0]) selectMasterFile(e.target.files[0]); });
     masterFileRow.addEventListener('click', () => masterFileInput.click());
     setupFileDrop(masterFileRow, selectMasterFile);
+
+    function selectCaseListFile(f) {
+      caseListFile = f;
+      caseListFileLabel.textContent = f.name;
+      caseListFileLabel.classList.replace('text-slate-400', 'text-slate-700');
+      updateExecBtn();
+    }
+    caseListFileInput.addEventListener('change', e => { if (e.target.files[0]) selectCaseListFile(e.target.files[0]); });
+    caseListFileRow.addEventListener('click', () => caseListFileInput.click());
+    setupFileDrop(caseListFileRow, selectCaseListFile);
 
     // 償却シミュレーション 6ファイル分
     for (let i = 1; i <= 6; i++) {
@@ -824,7 +1321,7 @@
     function updateExecBtn() {
       const depFilesOk = depFiles.every(f => f);
       const depYearsOk = Array.from({ length: 6 }, (_, i) => document.getElementById('depYearInput' + (i + 1)).value !== '').every(Boolean);
-      execBtn.disabled = !(yearInput.value !== '' && ledgerFile && masterFile && depFilesOk && depYearsOk);
+      execBtn.disabled = !(yearInput.value !== '' && ledgerFile && masterFile && caseListFile && depFilesOk && depYearsOk);
     }
 
     function setStep(n, state) {
@@ -891,9 +1388,50 @@
         clearSheetRows(destWb, '償却シミュレーション');
         let shoukyakuAppended = 0;
         for (const r of depResults) shoukyakuAppended += appendRowsToSheet(r.ws, shoukyakuWs, 0, 23);
-
-        const output = await generateOutputPreservingTemplate(masterBytes, destWb, ['資産台帳', '償却シミュレーション']);
         setStep(3, 'done');
+
+        // Step 4: 投資案件一覧をマスタへ転記
+        setStep(4, 'active'); await tick();
+        const caseBytes = new Uint8Array(await caseListFile.arrayBuffer());
+        const { wb: caseWb } = readWorkbook(caseBytes, { cellStyles: true });
+        const { collected: caseRows, totalRows: caseTotalRows, excludedRows: caseExcludedRows } = collectCaseListRows(caseWb);
+
+        const caseWs = destWb.Sheets[CASE_LIST_DEST_SHEET];
+        if (!caseWs) throw new Error(`マスタファイルに「${CASE_LIST_DEST_SHEET}」シートが見つかりません。`);
+        const formulaTemplates = extractFormulaTemplates(caseWs, CASE_LIST_FORMULA_COLS);
+        for (const c of CASE_LIST_FORMULA_COLS) {
+          if (!formulaTemplates[c]) {
+            throw new Error(`マスタファイルの「${CASE_LIST_DEST_SHEET}」シートに、${xlIdxToCol(c)}列のコピー元となる既存の数式が見つかりませんでした。`);
+          }
+        }
+
+        // 削除前の案件一覧シートからB列(管理№)をキーにC列(期初№)・D列(担当)を引き継ぐ
+        const caseCarryMap = extractCaseListCarryForward(caseWs);
+        const caseCarryMatched = applyCaseListCarryForward(caseRows, caseCarryMap);
+
+        // 転記データの背景色を、列ごとに(列, 色)の組み合わせとして収集（案件一覧シートへの色引き継ぎ用）
+        const caseArgbsByCol = {};
+        for (const row of caseRows) {
+          for (const c of CASE_LIST_COPY_COLS) {
+            const cell = row[c];
+            if (cell && cell._fillRgb) (caseArgbsByCol[c] = caseArgbsByCol[c] || []).push(cell._fillRgb);
+          }
+        }
+
+        const caseFooterRowCount = countCaseListFooterRows(caseWs);
+
+        const output = await generateOutputPreservingTemplate(masterBytes, destWb, {
+          '資産台帳':          { ws: shisanWs,    rowsXmlGenerator: colStyles => generateDataRowsXml(shisanWs, colStyles) },
+          '償却シミュレーション': { ws: shoukyakuWs, rowsXmlGenerator: colStyles => generateDataRowsXml(shoukyakuWs, colStyles) },
+          [CASE_LIST_DEST_SHEET]: {
+            refOverride: `A1:W${caseRows.length + 1 + caseFooterRowCount}`,
+            extraArgbsByCol: caseArgbsByCol,
+            rowsXmlGenerator: (colStyles, colorXfIdx, sheetXml) =>
+              generateCaseListDataRowsXml(caseRows, colStyles, formulaTemplates, colorXfIdx)
+              + extractCaseListFooterRowsXml(caseWs, sheetXml, caseRows.length),
+          },
+        });
+        setStep(4, 'done');
 
         const baseName = masterFile.name.replace(/\.[^.]+$/, '');
         const outName = baseName + '_更新済.xlsx';
@@ -904,7 +1442,8 @@
         successDetail.textContent = `${outName} を生成しました`
           + `（固定資産台帳: ${ledgerResult.lastRow}行中${ledgerResult.taggedRows}行に${yearValue}年度を設定し資産台帳シートへ${shisanAppended}行追加 / `
           + `資産台帳シート内の${yearValue}年度データ${removed}行を置換 / `
-          + `償却シミュレーション: 6ファイル合計${shoukyakuAppended}行を再構築）`;
+          + `償却シミュレーション: 6ファイル合計${shoukyakuAppended}行を再構築 / `
+          + `投資案件一覧: 対象${caseTotalRows}件中${caseExcludedRows}件を除外し${caseRows.length}件を${CASE_LIST_DEST_SHEET}シートへ反映（うちC・D列を${caseCarryMatched}件引き継ぎ、末尾の総額行等${caseFooterRowCount}行を保持）`;
         successBox.style.display = 'flex';
         downloadArea.style.display = 'block';
 
