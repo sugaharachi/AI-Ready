@@ -16,11 +16,19 @@
 
     <div class="mb-4">
       <h1 class="text-lg font-bold text-slate-800">固定資産台帳 更新ツール</h1>
-      <p class="text-slate-500 text-sm mt-1">固定資産台帳と償却シミュレーション（6ファイル）、投資案件一覧を整形し、マスタファイルへ一括転記します。</p>
+      <p id="toolDesc" class="text-slate-500 text-sm mt-1">固定資産台帳、償却シミュレーション、投資案件一覧からダッシュボード用の資産台帳データを作成します。</p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
       <div class="p-6 space-y-4">
+
+        <!-- モード切替: 通常 / 固定資産台帳のみ -->
+        <div class="flex bg-slate-100 rounded-lg p-1">
+          <button type="button" id="modeNormalBtn"
+            class="flex-1 py-1.5 rounded-md text-sm font-semibold bg-white text-slate-800 shadow-sm transition-colors">通常</button>
+          <button type="button" id="modeLedgerOnlyBtn"
+            class="flex-1 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">固定資産台帳のみ</button>
+        </div>
 
         <!-- 年度 -->
         <div>
@@ -47,6 +55,9 @@
           </label>
           <input type="file" id="ledgerFileInput" accept=".xlsx,.xls" class="hidden">
         </div>
+
+        <!-- 通常モードのみ表示: 償却シミュレーション・投資案件一覧 -->
+        <div id="fullModeBlock">
 
         <!-- 償却シミュレーションファイル ×6 -->
         <div>
@@ -153,6 +164,8 @@
           </label>
           <input type="file" id="caseListFileInput" accept=".xlsx,.xls" class="hidden">
         </div>
+
+        </div><!-- /fullModeBlock -->
 
         <!-- 出力先の資産台帳 -->
         <div>
@@ -1281,6 +1294,37 @@
     caseListFileRow.addEventListener('click', () => caseListFileInput.click());
     setupFileDrop(caseListFileRow, selectCaseListFile);
 
+    // モード切替: 通常（全ステップ） / 固定資産台帳のみ（償却シミュレーション・投資案件一覧を省略）
+    const modeNormalBtn     = document.getElementById('modeNormalBtn');
+    const modeLedgerOnlyBtn = document.getElementById('modeLedgerOnlyBtn');
+    const fullModeBlock     = document.getElementById('fullModeBlock');
+    const toolDesc          = document.getElementById('toolDesc');
+    const step2Row          = document.getElementById('step2Row');
+    const step4Row          = document.getElementById('step4Row');
+
+    let ledgerOnlyMode = false;
+
+    function setMode(isLedgerOnly) {
+      ledgerOnlyMode = isLedgerOnly;
+      fullModeBlock.style.display = isLedgerOnly ? 'none' : 'block';
+      step2Row.style.display = isLedgerOnly ? 'none' : 'flex';
+      step4Row.style.display = isLedgerOnly ? 'none' : 'flex';
+      toolDesc.textContent = isLedgerOnly
+        ? '固定資産台帳のみを整形し、マスタファイルの資産台帳シートへ転記します。'
+        : '固定資産台帳、償却シミュレーション、投資案件一覧からダッシュボード用の資産台帳データを作成します。';
+      modeNormalBtn.classList.toggle('bg-white', !isLedgerOnly);
+      modeNormalBtn.classList.toggle('shadow-sm', !isLedgerOnly);
+      modeNormalBtn.classList.toggle('text-slate-800', !isLedgerOnly);
+      modeNormalBtn.classList.toggle('text-slate-500', isLedgerOnly);
+      modeLedgerOnlyBtn.classList.toggle('bg-white', isLedgerOnly);
+      modeLedgerOnlyBtn.classList.toggle('shadow-sm', isLedgerOnly);
+      modeLedgerOnlyBtn.classList.toggle('text-slate-800', isLedgerOnly);
+      modeLedgerOnlyBtn.classList.toggle('text-slate-500', !isLedgerOnly);
+      updateExecBtn();
+    }
+    modeNormalBtn.addEventListener('click', () => setMode(false));
+    modeLedgerOnlyBtn.addEventListener('click', () => setMode(true));
+
     // 償却シミュレーション 6ファイル分
     for (let i = 1; i <= 6; i++) {
       const idx         = i - 1;
@@ -1319,6 +1363,10 @@
     yearInput.dispatchEvent(new Event('input'));
 
     function updateExecBtn() {
+      if (ledgerOnlyMode) {
+        execBtn.disabled = !(yearInput.value !== '' && ledgerFile && masterFile);
+        return;
+      }
       const depFilesOk = depFiles.every(f => f);
       const depYearsOk = Array.from({ length: 6 }, (_, i) => document.getElementById('depYearInput' + (i + 1)).value !== '').every(Boolean);
       execBtn.disabled = !(yearInput.value !== '' && ledgerFile && masterFile && caseListFile && depFilesOk && depYearsOk);
@@ -1362,15 +1410,17 @@
         const ledgerResult = processKoteishisanDaicho(ledgerBytes, yearValue);
         setStep(1, 'done');
 
-        // Step 2: 償却シミュレーション（6ファイル）を整形
-        setStep(2, 'active'); await tick();
-        const depResults = [];
-        for (let i = 0; i < 6; i++) {
-          const bytes = new Uint8Array(await depFiles[i].arrayBuffer());
-          const depYear = Number(document.getElementById('depYearInput' + (i + 1)).value);
-          depResults.push(processShoukyaku(bytes, depYear, `ファイル${i + 1}`));
+        // Step 2: 償却シミュレーション（6ファイル）を整形（固定資産台帳のみモードでは省略）
+        let depResults = [];
+        if (!ledgerOnlyMode) {
+          setStep(2, 'active'); await tick();
+          for (let i = 0; i < 6; i++) {
+            const bytes = new Uint8Array(await depFiles[i].arrayBuffer());
+            const depYear = Number(document.getElementById('depYearInput' + (i + 1)).value);
+            depResults.push(processShoukyaku(bytes, depYear, `ファイル${i + 1}`));
+          }
+          setStep(2, 'done');
         }
-        setStep(2, 'done');
 
         // Step 3: マスタファイルへ転記
         setStep(3, 'active'); await tick();
@@ -1383,55 +1433,65 @@
         const { removed } = removeRowsByYear(shisanWs, bgIdx, yearValue);
         const shisanAppended = appendRowsToSheet(ledgerResult.ws, shisanWs, 0, bgIdx);
 
-        const shoukyakuWs = destWb.Sheets['償却シミュレーション'];
-        if (!shoukyakuWs) throw new Error('マスタファイルに「償却シミュレーション」シートが見つかりません。');
-        clearSheetRows(destWb, '償却シミュレーション');
-        let shoukyakuAppended = 0;
-        for (const r of depResults) shoukyakuAppended += appendRowsToSheet(r.ws, shoukyakuWs, 0, 23);
+        let shoukyakuWs = null, shoukyakuAppended = 0;
+        if (!ledgerOnlyMode) {
+          shoukyakuWs = destWb.Sheets['償却シミュレーション'];
+          if (!shoukyakuWs) throw new Error('マスタファイルに「償却シミュレーション」シートが見つかりません。');
+          clearSheetRows(destWb, '償却シミュレーション');
+          for (const r of depResults) shoukyakuAppended += appendRowsToSheet(r.ws, shoukyakuWs, 0, 23);
+        }
         setStep(3, 'done');
 
-        // Step 4: 投資案件一覧をマスタへ転記
-        setStep(4, 'active'); await tick();
-        const caseBytes = new Uint8Array(await caseListFile.arrayBuffer());
-        const { wb: caseWb } = readWorkbook(caseBytes, { cellStyles: true });
-        const { collected: caseRows, totalRows: caseTotalRows, excludedRows: caseExcludedRows } = collectCaseListRows(caseWb);
+        const sheetConfigs = {
+          '資産台帳': { ws: shisanWs, rowsXmlGenerator: colStyles => generateDataRowsXml(shisanWs, colStyles) },
+        };
 
-        const caseWs = destWb.Sheets[CASE_LIST_DEST_SHEET];
-        if (!caseWs) throw new Error(`マスタファイルに「${CASE_LIST_DEST_SHEET}」シートが見つかりません。`);
-        const formulaTemplates = extractFormulaTemplates(caseWs, CASE_LIST_FORMULA_COLS);
-        for (const c of CASE_LIST_FORMULA_COLS) {
-          if (!formulaTemplates[c]) {
-            throw new Error(`マスタファイルの「${CASE_LIST_DEST_SHEET}」シートに、${xlIdxToCol(c)}列のコピー元となる既存の数式が見つかりませんでした。`);
+        let caseTotalRows = 0, caseExcludedRows = 0, caseRowsCount = 0, caseCarryMatched = 0, caseFooterRowCount = 0;
+        if (!ledgerOnlyMode) {
+          sheetConfigs['償却シミュレーション'] = { ws: shoukyakuWs, rowsXmlGenerator: colStyles => generateDataRowsXml(shoukyakuWs, colStyles) };
+
+          // Step 4: 投資案件一覧をマスタへ転記
+          setStep(4, 'active'); await tick();
+          const caseBytes = new Uint8Array(await caseListFile.arrayBuffer());
+          const { wb: caseWb } = readWorkbook(caseBytes, { cellStyles: true });
+          const { collected: caseRows, totalRows, excludedRows } = collectCaseListRows(caseWb);
+          caseTotalRows = totalRows; caseExcludedRows = excludedRows; caseRowsCount = caseRows.length;
+
+          const caseWs = destWb.Sheets[CASE_LIST_DEST_SHEET];
+          if (!caseWs) throw new Error(`マスタファイルに「${CASE_LIST_DEST_SHEET}」シートが見つかりません。`);
+          const formulaTemplates = extractFormulaTemplates(caseWs, CASE_LIST_FORMULA_COLS);
+          for (const c of CASE_LIST_FORMULA_COLS) {
+            if (!formulaTemplates[c]) {
+              throw new Error(`マスタファイルの「${CASE_LIST_DEST_SHEET}」シートに、${xlIdxToCol(c)}列のコピー元となる既存の数式が見つかりませんでした。`);
+            }
           }
-        }
 
-        // 削除前の案件一覧シートからB列(管理№)をキーにC列(期初№)・D列(担当)を引き継ぐ
-        const caseCarryMap = extractCaseListCarryForward(caseWs);
-        const caseCarryMatched = applyCaseListCarryForward(caseRows, caseCarryMap);
+          // 削除前の案件一覧シートからB列(管理№)をキーにC列(期初№)・D列(担当)を引き継ぐ
+          const caseCarryMap = extractCaseListCarryForward(caseWs);
+          caseCarryMatched = applyCaseListCarryForward(caseRows, caseCarryMap);
 
-        // 転記データの背景色を、列ごとに(列, 色)の組み合わせとして収集（案件一覧シートへの色引き継ぎ用）
-        const caseArgbsByCol = {};
-        for (const row of caseRows) {
-          for (const c of CASE_LIST_COPY_COLS) {
-            const cell = row[c];
-            if (cell && cell._fillRgb) (caseArgbsByCol[c] = caseArgbsByCol[c] || []).push(cell._fillRgb);
+          // 転記データの背景色を、列ごとに(列, 色)の組み合わせとして収集（案件一覧シートへの色引き継ぎ用）
+          const caseArgbsByCol = {};
+          for (const row of caseRows) {
+            for (const c of CASE_LIST_COPY_COLS) {
+              const cell = row[c];
+              if (cell && cell._fillRgb) (caseArgbsByCol[c] = caseArgbsByCol[c] || []).push(cell._fillRgb);
+            }
           }
-        }
 
-        const caseFooterRowCount = countCaseListFooterRows(caseWs);
+          caseFooterRowCount = countCaseListFooterRows(caseWs);
 
-        const output = await generateOutputPreservingTemplate(masterBytes, destWb, {
-          '資産台帳':          { ws: shisanWs,    rowsXmlGenerator: colStyles => generateDataRowsXml(shisanWs, colStyles) },
-          '償却シミュレーション': { ws: shoukyakuWs, rowsXmlGenerator: colStyles => generateDataRowsXml(shoukyakuWs, colStyles) },
-          [CASE_LIST_DEST_SHEET]: {
-            refOverride: `A1:W${caseRows.length + 1 + caseFooterRowCount}`,
+          sheetConfigs[CASE_LIST_DEST_SHEET] = {
+            refOverride: `A1:W${caseRowsCount + 1 + caseFooterRowCount}`,
             extraArgbsByCol: caseArgbsByCol,
             rowsXmlGenerator: (colStyles, colorXfIdx, sheetXml) =>
               generateCaseListDataRowsXml(caseRows, colStyles, formulaTemplates, colorXfIdx)
-              + extractCaseListFooterRowsXml(caseWs, sheetXml, caseRows.length),
-          },
-        });
-        setStep(4, 'done');
+              + extractCaseListFooterRowsXml(caseWs, sheetXml, caseRowsCount),
+          };
+          setStep(4, 'done');
+        }
+
+        const output = await generateOutputPreservingTemplate(masterBytes, destWb, sheetConfigs);
 
         const baseName = masterFile.name.replace(/\.[^.]+$/, '');
         const outName = baseName + '_更新済.xlsx';
@@ -1439,11 +1499,16 @@
         const url = URL.createObjectURL(blob);
         dlOutput._objUrl = url; dlOutput.href = url; dlOutput.download = outName;
 
-        successDetail.textContent = `${outName} を生成しました`
+        let detail = `${outName} を生成しました`
           + `（固定資産台帳: ${ledgerResult.lastRow}行中${ledgerResult.taggedRows}行に${yearValue}年度を設定し資産台帳シートへ${shisanAppended}行追加 / `
-          + `資産台帳シート内の${yearValue}年度データ${removed}行を置換 / `
-          + `償却シミュレーション: 6ファイル合計${shoukyakuAppended}行を再構築 / `
-          + `投資案件一覧: 対象${caseTotalRows}件中${caseExcludedRows}件を除外し${caseRows.length}件を${CASE_LIST_DEST_SHEET}シートへ反映（うちC・D列を${caseCarryMatched}件引き継ぎ、末尾の総額行等${caseFooterRowCount}行を保持）`;
+          + `資産台帳シート内の${yearValue}年度データ${removed}行を置換`;
+        if (!ledgerOnlyMode) {
+          detail += ` / 償却シミュレーション: 6ファイル合計${shoukyakuAppended}行を再構築 / `
+            + `投資案件一覧: 対象${caseTotalRows}件中${caseExcludedRows}件を除外し${caseRowsCount}件を${CASE_LIST_DEST_SHEET}シートへ反映（うちC・D列を${caseCarryMatched}件引き継ぎ、末尾の総額行等${caseFooterRowCount}行を保持）`;
+        } else {
+          detail += '）';
+        }
+        successDetail.textContent = detail;
         successBox.style.display = 'flex';
         downloadArea.style.display = 'block';
 
