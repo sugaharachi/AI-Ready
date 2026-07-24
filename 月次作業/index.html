@@ -19,6 +19,7 @@
       <button id="tab1" onclick="switchTab(1)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition-colors">資産台帳</button>
       <button id="tab2" onclick="switchTab(2)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">仕訳明細</button>
       <button id="tab3" onclick="switchTab(3)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">投資実績</button>
+      <button id="tab4" onclick="switchTab(4)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">予算明細</button>
     </div>
 
     <!-- =============================== -->
@@ -393,6 +394,101 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               更新済み投資実績ファイルをダウンロード
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================== -->
+    <!-- Panel 4: 予算明細 フォーマット調整 -->
+    <!-- =============================== -->
+    <div id="panel4" style="display:none">
+      <div class="mb-4">
+        <p class="text-slate-500 text-sm">他システムからダウンロードした予算データをフォーマット調整します。</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="p-6 space-y-4">
+
+          <!-- 対象月 -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              対象月 <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">４月〜対象月を期間合計として集計</p>
+            <input type="month" id="yosanDateInput"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- ダウンロードデータファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              予算明細ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">予算システムから取得した修正後の予算</p>
+            <label for="yosanDlInput" id="yosanDlRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yosanDlLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yosanDlInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 前月のフォーマット修正後データファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              前月時点の予算ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">本ツールで作成した前月時点の予算</p>
+            <label for="yosanPrevInput" id="yosanPrevRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yosanPrevLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yosanPrevInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- Execute -->
+          <button id="yosanExecBtn" disabled
+            class="w-full py-3 rounded-xl font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            実行
+          </button>
+
+          <!-- Success -->
+          <div id="yosanSuccess" style="display:none" class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <div>
+              <p class="text-emerald-800 font-medium text-sm">変換が完了しました</p>
+              <p id="yosanSuccessDetail" class="text-emerald-600 text-xs mt-0.5"></p>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="yosanError" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p id="yosanErrorMsg" class="text-red-800 text-sm"></p>
+          </div>
+
+          <!-- Download -->
+          <div id="yosanDownloadArea" style="display:none">
+            <a id="dlYosan" href="#"
+              class="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+              <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              フォーマット修正後データをダウンロード
             </a>
           </div>
 
@@ -842,13 +938,48 @@
     // =====================================================
     // 共通ユーティリティ: Excelファイル読み込み
     // =====================================================
+    // シートXMLの dimension タグ(使用範囲の宣言)が実際のセルデータより
+    // 古い/小さいまま保存されているファイルが稀に存在する。SheetJSはこの
+    // 宣言値をそのまま signal['!ref'] として使うため、実データがあっても
+    // 一部の行・列が無視されてしまう。実際に存在するセルアドレスを
+    // スキャンし直し、宣言範囲より広ければ !ref を補正する。
+    function fixStaleSheetRange(ws) {
+      if (!ws) return;
+      let maxR = -1, maxC = -1, minR = Infinity, minC = Infinity;
+      for (const addr in ws) {
+        if (addr.charCodeAt(0) === 33) continue; // '!'始まりのメタキーはスキップ
+        const cell = XLSX.utils.decode_cell(addr);
+        if (cell.r > maxR) maxR = cell.r;
+        if (cell.c > maxC) maxC = cell.c;
+        if (cell.r < minR) minR = cell.r;
+        if (cell.c < minC) minC = cell.c;
+      }
+      if (maxR < 0) return; // セルが1つも無い
+
+      const declared = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : null;
+      const needsFix = !declared ||
+        declared.e.r < maxR || declared.e.c < maxC ||
+        declared.s.r > minR || declared.s.c > minC;
+      if (!needsFix) return;
+
+      ws['!ref'] = XLSX.utils.encode_range({
+        s: { r: Math.min(minR, declared ? declared.s.r : minR), c: Math.min(minC, declared ? declared.s.c : minC) },
+        e: { r: Math.max(maxR, declared ? declared.e.r : maxR), c: Math.max(maxC, declared ? declared.e.c : maxC) },
+      });
+    }
+
+    function fixStaleWorkbookRanges(wb) {
+      wb.SheetNames.forEach(name => fixStaleSheetRange(wb.Sheets[name]));
+      return wb;
+    }
+
     function readWorkbook(bytes) {
       const b0 = bytes[0], b1 = bytes[1], b2 = bytes[2];
       if (b0 === 0x50 && b1 === 0x4B) {
-        return { fmt: 'xlsx(ZIP)',  wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+        return { fmt: 'xlsx(ZIP)',  wb: fixStaleWorkbookRanges(XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 })) };
       }
       if (b0 === 0xD0 && b1 === 0xCF) {
-        return { fmt: 'xls(OLE2)', wb: XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 }) };
+        return { fmt: 'xls(OLE2)', wb: fixStaleWorkbookRanges(XLSX.read(bytes, { type: 'array', cellNF: true, codepage: 932 })) };
       }
       let text, fmt;
       if (b0 === 0xEF && b1 === 0xBB && b2 === 0xBF) {
@@ -864,7 +995,7 @@
         fmt  = 'text(CP932/Shift-JIS)';
         text = new TextDecoder('shift-jis').decode(bytes);
       }
-      return { fmt, wb: XLSX.read(text, { type: 'string', cellNF: true }) };
+      return { fmt, wb: fixStaleWorkbookRanges(XLSX.read(text, { type: 'string', cellNF: true })) };
     }
 
     // 元ファイルにオートフィルタ/非表示行が残っていると転記漏れの原因になるため、
@@ -1499,7 +1630,7 @@
     // タブ切り替え
     // =====================================================
     function switchTab(n) {
-      [1, 2, 3].forEach(i => {
+      [1, 2, 3, 4].forEach(i => {
         document.getElementById('panel' + i).style.display = i === n ? 'block' : 'none';
         document.getElementById('tab' + i).className = i === n
           ? 'flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition-colors'
@@ -2005,7 +2136,11 @@
     }
 
     function sheetCellToXml(cell, ref, sAttr) {
-      if (cell.t === 'n') return `<c r="${ref}"${sAttr}><v>${cell.v}</v></c>`;
+      if (cell.t === 'n') {
+        // cell.fがあれば数式文字列も埋め込む（キャッシュ値<v>だけだとExcelで数式として認識されない）
+        const f = cell.f ? `<f>${String(cell.f).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</f>` : '';
+        return `<c r="${ref}"${sAttr}>${f}<v>${cell.v}</v></c>`;
+      }
       if (cell.t === 'd' && cell.v instanceof Date) {
         const d = cell.v;
         const s = (Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
@@ -2115,6 +2250,109 @@
       return { xml, yellowXfIdx, redXfIdx, clearFillMap, rgbToXfIdx };
     }
 
+    // calcChain.xmlは数式セルの再計算順序キャッシュ。シートのデータ行を直接書き換えて数式セルの
+    // 構成が変わると、古いcalcChain.xmlの内容と矛盾し、Excelで開いた際に
+    // 「削除されたレコード: 数式(計算のプロパティ)」という修復ダイアログが出てしまう。
+    // calcChain.xmlはExcelが開いたときに自動的に作り直すため、まるごと削除してしまうのが安全
+    async function removeCalcChain(zip) {
+      const path = 'xl/calcChain.xml';
+      if (zip.file(path)) zip.remove(path);
+
+      const ctPath = '[Content_Types].xml';
+      const ctFile = zip.file(ctPath);
+      if (ctFile) {
+        const ct = (await ctFile.async('string'))
+          .replace(/<Override\b[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/, '');
+        zip.file(ctPath, ct);
+      }
+
+      const relsPath = 'xl/_rels/workbook.xml.rels';
+      const relsFile = zip.file(relsPath);
+      if (relsFile) {
+        const rels = (await relsFile.async('string'))
+          .replace(/<Relationship\b[^>]*Target="calcChain\.xml"[^>]*\/>/, '');
+        zip.file(relsPath, rels);
+      }
+    }
+
+    // 新規に書き込んだ数式セルはキャッシュ値(<v>)を持たないため、計算モードが手動になっていても
+    // Excelで開いた瞬間に必ず再計算されるよう workbook.xml の calcPr に fullCalcOnLoad="1" を設定する
+    async function forceFullCalcOnLoad(zip) {
+      const path = 'xl/workbook.xml';
+      const file = zip.file(path);
+      if (!file) return;
+      const xml = await file.async('string');
+      let patched;
+      if (/<calcPr\b[^>]*\/>/.test(xml)) {
+        patched = xml.replace(/<calcPr\b([^>]*)\/>/, (m, attrs) => {
+          if (/\bfullCalcOnLoad=/.test(attrs)) return m.replace(/fullCalcOnLoad="[^"]*"/, 'fullCalcOnLoad="1"');
+          return `<calcPr${attrs} fullCalcOnLoad="1"/>`;
+        });
+      } else if (/<\/workbook>/.test(xml)) {
+        patched = xml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+      } else {
+        patched = xml;
+      }
+      zip.file(path, patched);
+    }
+
+    // 相対パス解決 (例: baseDir="xl/worksheets", target="../comments1.xml" → "xl/comments1.xml")
+    function resolveRelPath(baseDir, target) {
+      const stack = [];
+      for (const p of [...baseDir.split('/'), ...target.split('/')]) {
+        if (p === '..') stack.pop();
+        else if (p === '.' || p === '') continue;
+        else stack.push(p);
+      }
+      return stack.join('/');
+    }
+
+    // テンプレートのセルに付いたメモ(旧:コメント)・スレッドコメントを除去する。
+    // データ行を書き換えてもテンプレート由来のメモはセル位置に紐付いたまま残ってしまうため、
+    // シートのlegacyDrawing参照・メモ本体(commentsN.xml)・吹き出し描画(vmlDrawingN.vml)を
+    // すべて削除し、Content_Types.xml/rels からも参照を取り除く
+    async function removeSheetComments(zip, sheetPath) {
+      if (!sheetPath || !zip.file(sheetPath)) return;
+      let sheetXml = await zip.file(sheetPath).async('string');
+      if (!/<legacyDrawing\b/.test(sheetXml)) return;
+
+      const dir      = sheetPath.substring(0, sheetPath.lastIndexOf('/'));
+      const base     = sheetPath.substring(sheetPath.lastIndexOf('/') + 1);
+      const relsPath = `${dir}/_rels/${base}.rels`;
+      const relsFile = zip.file(relsPath);
+
+      if (relsFile) {
+        let relsXml = await relsFile.async('string');
+        const targets = [];
+        relsXml = relsXml.replace(/<Relationship\b[^>]*\/>/g, (tag) => {
+          const isComment = /Type="[^"]*\/(comments|threadedComment)"/.test(tag) || /Target="[^"]*vmlDrawing[^"]*"/.test(tag);
+          if (!isComment) return tag;
+          const tM = tag.match(/Target="([^"]+)"/);
+          if (tM) targets.push(tM[1]);
+          return '';
+        });
+        zip.file(relsPath, relsXml);
+
+        if (targets.length) {
+          const ctPath = '[Content_Types].xml';
+          const ctFile = zip.file(ctPath);
+          let ct = ctFile ? await ctFile.async('string') : null;
+          for (const t of targets) {
+            const resolved = resolveRelPath(dir, t);
+            if (zip.file(resolved)) zip.remove(resolved);
+            if (ct) {
+              const esc = resolved.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              ct = ct.replace(new RegExp(`<Override\\b[^>]*PartName="/${esc}"[^>]*/>`), '');
+            }
+          }
+          if (ct) zip.file(ctPath, ct);
+        }
+      }
+
+      sheetXml = sheetXml.replace(/<legacyDrawing\b[^>]*\/>/, '');
+      zip.file(sheetPath, sheetXml);
+    }
+
     // テンプレートZIPを直接編集して出力xlsxを生成
     async function generateOutputUsingTemplate(templateBytes, destWb) {
       if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
@@ -2183,6 +2421,8 @@
         xml = updateSheetDimension(xml, ws && ws['!ref']);
         zip.file(sheetPaths[name], xml);
       }
+      await forceFullCalcOnLoad(zip);
+      await removeCalcChain(zip);
       return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
     }
 
@@ -2288,6 +2528,341 @@
       const newWb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(newWb, newWs, wb.SheetNames[0]);
       return newWb;
+    }
+
+    // =====================================================
+    // Card 4: 予算明細 フォーマット調整 UI
+    // =====================================================
+    const yosanDateInput     = document.getElementById('yosanDateInput');
+    const yosanDlInput       = document.getElementById('yosanDlInput');
+    const yosanDlLabel       = document.getElementById('yosanDlLabel');
+    const yosanPrevInput     = document.getElementById('yosanPrevInput');
+    const yosanPrevLabel     = document.getElementById('yosanPrevLabel');
+    const yosanExecBtn       = document.getElementById('yosanExecBtn');
+    const yosanSuccess       = document.getElementById('yosanSuccess');
+    const yosanSuccessDetail = document.getElementById('yosanSuccessDetail');
+    const yosanError         = document.getElementById('yosanError');
+    const yosanErrorMsg      = document.getElementById('yosanErrorMsg');
+    const yosanDownloadArea  = document.getElementById('yosanDownloadArea');
+    const dlYosan            = document.getElementById('dlYosan');
+
+    let yosanDlFile = null, yosanPrevFile = null;
+
+    function updateYosanBtn() {
+      yosanExecBtn.disabled = !(yosanDlFile && yosanPrevFile && yosanDateInput.value);
+    }
+
+    yosanDlInput.addEventListener('change', e => {
+      if (e.target.files[0]) {
+        yosanDlFile = e.target.files[0];
+        yosanDlLabel.textContent = yosanDlFile.name;
+        yosanDlLabel.classList.replace('text-slate-400', 'text-slate-700');
+      }
+      updateYosanBtn();
+    });
+    yosanPrevInput.addEventListener('change', e => {
+      if (e.target.files[0]) {
+        yosanPrevFile = e.target.files[0];
+        yosanPrevLabel.textContent = yosanPrevFile.name;
+        yosanPrevLabel.classList.replace('text-slate-400', 'text-slate-700');
+      }
+      updateYosanBtn();
+    });
+    yosanDateInput.addEventListener('change', updateYosanBtn);
+
+    setupFileDrop(document.getElementById('yosanDlRow'), f => {
+      yosanDlFile = f;
+      yosanDlLabel.textContent = f.name;
+      yosanDlLabel.classList.replace('text-slate-400', 'text-slate-700');
+      updateYosanBtn();
+    });
+    setupFileDrop(document.getElementById('yosanPrevRow'), f => {
+      yosanPrevFile = f;
+      yosanPrevLabel.textContent = f.name;
+      yosanPrevLabel.classList.replace('text-slate-400', 'text-slate-700');
+      updateYosanBtn();
+    });
+
+    function resetYosan() {
+      yosanSuccess.style.display = 'none';
+      yosanError.style.display = 'none';
+      yosanDownloadArea.style.display = 'none';
+      if (dlYosan._objUrl) { URL.revokeObjectURL(dlYosan._objUrl); dlYosan._objUrl = null; }
+    }
+
+    yosanExecBtn.addEventListener('click', async () => {
+      if (!yosanDlFile || !yosanPrevFile || !yosanDateInput.value) return;
+      yosanExecBtn.disabled = true;
+      yosanExecBtn.textContent = '処理中...';
+      resetYosan();
+
+      try {
+        const dlBytes   = new Uint8Array(await yosanDlFile.arrayBuffer());
+        const prevBytes = new Uint8Array(await yosanPrevFile.arrayBuffer());
+        const result    = processYosanMeisai(dlBytes, prevBytes, yosanDateInput.value);
+
+        // 前月ファイルをテンプレートとして列幅・フォント・罫線・数値書式を丸ごと引き継ぐ
+        const outBytes = await generateYosanOutputUsingTemplate(prevBytes, result.ws);
+
+        const [yr, mo] = yosanDateInput.value.split('-').map(Number);
+        const outName = `予算_${yr}年${mo}月度.xlsx`;
+        const blob = new Blob([outBytes], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        dlYosan._objUrl = url;
+        dlYosan.href = url;
+        dlYosan.download = outName;
+
+        yosanSuccessDetail.textContent =
+          `データ ${result.rowCount} 行 → ${outName} （前月データと一致: ${result.matchedCount}件 / 未一致: ${result.unmatchedCount}件）`;
+        yosanSuccess.style.display = 'flex';
+        yosanDownloadArea.style.display = 'block';
+
+      } catch (e) {
+        yosanErrorMsg.textContent = '処理エラー: ' + e.message;
+        yosanError.style.display = 'flex';
+      } finally {
+        yosanExecBtn.disabled = false;
+        yosanExecBtn.textContent = '実行';
+        updateYosanBtn();
+      }
+    });
+
+    // =====================================================
+    // Card 4 出力: 前月ファイルをテンプレートとしてJSZip直接編集し、
+    // 列幅・フォント・罫線・数値書式を保持したままデータ行だけ差し替える
+    // =====================================================
+
+    // 列ごとに最も出現頻度の高いスタイル番号を採用する（先頭行の書式が
+    // 例外的だと全新規データが引きずられてしまうため、多数決方式にする。
+    // 固定資産台帳ツールで発生した同種バグの教訓を反映）
+    function extractColStylesMode(sheetXml) {
+      const counts = {};
+      const re = /<c\b([^>]*)>/g;
+      let m;
+      while ((m = re.exec(sheetXml)) !== null) {
+        const attrs = m[1];
+        const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
+        if (!rM || parseInt(rM[2]) < 2) continue;
+        const sM = attrs.match(/\bs="(\d+)"/);
+        if (!sM) continue;
+        const c = xlColToIdx(rM[1]);
+        const s = parseInt(sM[1]);
+        if (!counts[c]) counts[c] = {};
+        counts[c][s] = (counts[c][s] || 0) + 1;
+      }
+      const colStyles = {};
+      for (const c in counts) {
+        let best = null, bestCount = -1;
+        for (const s in counts[c]) {
+          if (counts[c][s] > bestCount) { bestCount = counts[c][s]; best = +s; }
+        }
+        colStyles[c] = best;
+      }
+      return colStyles;
+    }
+
+    // styles.xmlに色付きfill/xfエントリを追加する軽量版
+    // (Card3のaddHighlightStylesは黄・赤の固定色前提のため、単色マーク用に別関数とする)
+    // usedXfIdxsを渡すと、その各スタイルについて背景なしクローンも生成しclearFillMapとして返す。
+    // テンプレートの列書式(colStyles)にたまたま背景色が付いていても、新規データ行には
+    // 引き継がず(ヘッダー行r="1"のみ元の書式のまま残る)、罫線・数値書式・フォントだけ継承するため。
+    function addColorFillStylesSimple(stylesXml, argbs, usedXfIdxs = []) {
+      const unique = [...new Set(argbs.filter(Boolean))];
+
+      const cellXfsM       = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const cellXfsContent = cellXfsM ? cellXfsM[1] : '';
+      const getXf = (idx) => {
+        const re = /<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g;
+        let i = 0, m;
+        while ((m = re.exec(cellXfsContent)) !== null) { if (i++ === idx) return m[0]; }
+        return null;
+      };
+      const fallback = '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+      const cloneNoFill = (xfXml) => {
+        let s = xfXml;
+        s = /\bfillId="/.test(s) ? s.replace(/\bfillId="\d+"/, 'fillId="0"') : s.replace('<xf', '<xf fillId="0"');
+        s = /\bapplyFill="/.test(s) ? s.replace(/\bapplyFill="\w+"/, 'applyFill="1"') : s.replace('<xf', '<xf applyFill="1"');
+        return s;
+      };
+
+      let xml = stylesXml;
+      const fillsCountMatch = xml.match(/<fills count="(\d+)"/);
+      const fillsCount = fillsCountMatch ? +fillsCountMatch[1] : 2;
+      if (unique.length) {
+        const newFills = unique.map(argb =>
+          `<fill><patternFill patternType="solid"><fgColor rgb="FF${argb}"/><bgColor indexed="64"/></patternFill></fill>`
+        ).join('');
+        xml = xml
+          .replace(/<fills count="\d+"/, `<fills count="${fillsCount + unique.length}"`)
+          .replace('</fills>', newFills + '</fills>');
+      }
+
+      const xfsCountMatch = xml.match(/<cellXfs count="(\d+)"/);
+      const xfsCount = xfsCountMatch ? +xfsCountMatch[1] : 1;
+      const rgbToXfIdx = {};
+      const colorXfs = unique.map((argb, i) => {
+        rgbToXfIdx[argb] = xfsCount + i;
+        return `<xf numFmtId="0" fontId="0" fillId="${fillsCount + i}" borderId="0" xfId="0" applyFill="1"/>`;
+      });
+
+      const clearFillMap = {};
+      const noFillXfs = [];
+      [...new Set(usedXfIdxs)].forEach((origIdx, i) => {
+        clearFillMap[origIdx] = xfsCount + colorXfs.length + i;
+        noFillXfs.push(cloneNoFill(getXf(origIdx) ?? fallback));
+      });
+
+      const totalNew = colorXfs.length + noFillXfs.length;
+      if (totalNew) {
+        xml = xml
+          .replace(/<cellXfs count="\d+"/, `<cellXfs count="${xfsCount + totalNew}"`)
+          .replace('</cellXfs>', colorXfs.join('') + noFillXfs.join('') + '</cellXfs>');
+      }
+
+      return { xml, rgbToXfIdx, clearFillMap };
+    }
+
+    // 前月ファイル(テンプレート)のZIPを直接編集し、1シート目のデータ行のみ
+    // wsの内容に差し替える。ヘッダー行・列幅(<cols>)・列ごとの書式はテンプレートのまま保持される
+    async function generateYosanOutputUsingTemplate(templateBytes, ws) {
+      if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
+        console.warn('JSZip未ロード → SheetJS writeにフォールバック（前月の書式は引き継げません）');
+        const wbOut = { SheetNames: ['予算明細'], Sheets: { '予算明細': ws } };
+        return new Uint8Array(XLSX.write(wbOut, { type: 'array', bookType: 'xlsx' }));
+      }
+
+      const zip        = await JSZip.loadAsync(templateBytes.buffer ?? templateBytes);
+      const sheetPaths = await getSheetPaths(zip);
+      const sheetName  = Object.keys(sheetPaths)[0];
+      const sheetPath  = sheetPaths[sheetName];
+      if (!sheetPath || !zip.file(sheetPath)) throw new Error('前月ファイルのシートXMLが見つかりません。');
+      let sheetXml = await zip.file(sheetPath).async('string');
+
+      const colStyles = extractColStylesMode(sheetXml);
+
+      // 未一致マーク(_fillRgb)が付いたセルの色一覧を収集
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const argbs = [];
+      for (let R = 1; R <= range.e.r; R++)
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (cell && cell._fillRgb) argbs.push(cell._fillRgb);
+        }
+
+      let rgbToXfIdx = {};
+      let clearFillMap = {};
+      const stylesFile = zip.file('xl/styles.xml');
+      if (stylesFile) {
+        const stylesXml = await stylesFile.async('string');
+        const usedXfIdxs = Object.values(colStyles);
+        const { xml: newStyles, rgbToXfIdx: rtx, clearFillMap: cfm } =
+          addColorFillStylesSimple(stylesXml, argbs, usedXfIdxs);
+        zip.file('xl/styles.xml', newStyles);
+        rgbToXfIdx = rtx;
+        clearFillMap = cfm;
+      }
+
+      const rowsXml = generateDataRowsXml(ws, colStyles, {}, clearFillMap, rgbToXfIdx);
+      sheetXml = replaceSheetDataRows(sheetXml, rowsXml);
+      sheetXml = updateSheetDimension(sheetXml, ws['!ref']);
+      zip.file(sheetPath, sheetXml);
+
+      await removeSheetComments(zip, sheetPath);
+      await forceFullCalcOnLoad(zip);
+      await removeCalcChain(zip);
+      return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+    }
+
+    // =====================================================
+    // Card 4: 予算明細 フォーマット調整 処理ロジック
+    //   ダウンロードデータ(他システム抽出) → フォーマット修正後データ形式へ変換
+    //   ・T列(期間合計)/U列(予算残額)を新設(S列と旧T列="4月"の間に挿入)
+    //   ・M列(PF)/N列(予算対比)は前月のフォーマット修正後データを
+    //     I列(科目CD)+O列(詳細内容)の完全一致で照合して転記する
+    //   ・未一致行はM/N列を空欄にしオレンジ色でマークする
+    //   ・出力は前月ファイルをテンプレートとして書式を丸ごと引き継ぐ
+    //     (generateYosanOutputUsingTemplateに渡すためwsを返す)
+    // =====================================================
+    function processYosanMeisai(dlBytes, prevBytes, yearMonth) {
+      const { wb } = readWorkbook(dlBytes);
+      clearFilterState(wb);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      if (!ws['!ref']) throw new Error('ダウンロードデータにデータがありません。');
+
+      // ダウンロードデータの1行目(英語ヘッダー)は不要なので削除し、
+      // 2行目(日本語ヘッダー)を1行目(idx0)として使う
+      wsDeleteRow(ws, 0);
+
+      const { wb: prevWb } = readWorkbook(prevBytes);
+      const prevWs = prevWb.Sheets[prevWb.SheetNames[0]];
+      if (!prevWs['!ref']) throw new Error('前月のフォーマット修正後データにデータがありません。');
+
+      // 前月データ: I列(科目CD)+O列(詳細内容) の完全一致キー → {pf, taihi} のルックアップを作成
+      // 前月データもヘッダーは1行(日本語見出しのみ)、データ行はExcel2行目(idx1)から
+      const prevRange = XLSX.utils.decode_range(prevWs['!ref']);
+      const lookup = new Map();
+      for (let R = 1; R <= prevRange.e.r; R++) {
+        const key = String(getCellVal(prevWs, R, 8)).trim() + '' + String(getCellVal(prevWs, R, 14)).trim();
+        if (!lookup.has(key)) {
+          lookup.set(key, { pf: getCellVal(prevWs, R, 12), taihi: getCellVal(prevWs, R, 13) });
+        }
+      }
+
+      // T・U列(期間合計・予算残額)をS列(idx18)と旧T列="4月"(idx19)の間に新設
+      // → 以降の列(月別実績など)は2列右へシフトする
+      wsInsertCol(ws, 19);
+      wsInsertCol(ws, 19);
+
+      // ヘッダー行(idx0)は出力時に前月テンプレートのヘッダーをそのまま使うため、
+      // ここでの書き換えは不要（generateYosanOutputUsingTemplate参照）
+
+      // 対象月列を算出（４月=V列(idx21)を起点に年度内オフセットで求める）
+      const [, mo] = yearMonth.split('-').map(Number);
+      const monthOffset = (mo - 4 + 12) % 12; // 4月=0 ... 3月=11
+      const targetCol = 21 + monthOffset;
+      const targetColLetter = XLSX.utils.encode_col(targetCol);
+
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      let matchedCount = 0, unmatchedCount = 0;
+
+      for (let R = 1; R <= range.e.r; R++) {
+        const rowNum = R + 1; // Excel上の行番号(1始まり)
+
+        // 期間合計 = ４月〜対象月のSUM
+        let sum = 0;
+        for (let C = 21; C <= targetCol; C++) {
+          const v = getCellVal(ws, R, C);
+          if (typeof v === 'number') sum += v;
+          else if (v !== '' && !isNaN(v)) sum += Number(v);
+        }
+        ws[XLSX.utils.encode_cell({ r: R, c: 19 })] =
+          { t: 'n', v: sum, z: '#,##0', f: `SUM(V${rowNum}:${targetColLetter}${rowNum})` };
+
+        // 予算残額 = 年度計 - 期間合計
+        const sRaw = getCellVal(ws, R, 18);
+        const sVal = typeof sRaw === 'number' ? sRaw : (sRaw !== '' && !isNaN(sRaw) ? Number(sRaw) : 0);
+        ws[XLSX.utils.encode_cell({ r: R, c: 20 })] =
+          { t: 'n', v: sVal - sum, z: '#,##0', f: `S${rowNum}-T${rowNum}` };
+
+        // PF/予算対比: 前月データをI列(科目CD)+O列(詳細内容)の完全一致で照合
+        const iVal = String(getCellVal(ws, R, 8)).trim();
+        const oVal = String(getCellVal(ws, R, 14)).trim();
+        const match = lookup.get(iVal + '' + oVal);
+        if (match) {
+          setCellStr(ws, R, 12, match.pf);
+          setCellStr(ws, R, 13, match.taihi);
+          matchedCount++;
+        } else {
+          // 未一致: 空欄のままオレンジでマークし目視確認を促す
+          ws[XLSX.utils.encode_cell({ r: R, c: 12 })] = { t: 's', v: '', _fillRgb: 'FFA500' };
+          ws[XLSX.utils.encode_cell({ r: R, c: 13 })] = { t: 's', v: '', _fillRgb: 'FFA500' };
+          unmatchedCount++;
+        }
+      }
+
+      return { ws, rowCount: range.e.r, matchedCount, unmatchedCount };
     }
 
   </script>
