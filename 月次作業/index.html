@@ -20,6 +20,7 @@
       <button id="tab2" onclick="switchTab(2)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">仕訳明細</button>
       <button id="tab3" onclick="switchTab(3)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">投資実績</button>
       <button id="tab4" onclick="switchTab(4)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">予算明細</button>
+      <button id="tab5" onclick="switchTab(5)" class="flex-1 py-2 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">予実チェック取込</button>
     </div>
 
     <!-- =============================== -->
@@ -489,6 +490,173 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               フォーマット修正後データをダウンロード
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================== -->
+    <!-- Panel 5: 予実チェック取込        -->
+    <!-- =============================== -->
+    <div id="panel5" style="display:none">
+      <div class="mb-4">
+        <p class="text-slate-500 text-sm">各Cardの出力を「予実チェック」ワークブックの各シートに貼り付け、ＰＦ別集計を再計算させます。</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="p-6 space-y-4">
+
+          <!-- 対象月 -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              対象月 <span class="text-red-500">*</span>
+            </label>
+            <input type="month" id="yojitsuDateInput"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- 予実チェックファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              予実チェックファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">本ツールで作成した前月時点の予実チェック</p>
+            <label for="yojitsuTemplateInput" id="yojitsuTemplateRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yojitsuTemplateLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yojitsuTemplateInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 仕訳明細累計ファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              仕訳明細累計ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">本ツール「更新仕訳データ」で作成した仕訳明細累計</p>
+            <label for="yojitsuShiwakeInput" id="yojitsuShiwakeRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yojitsuShiwakeLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yojitsuShiwakeInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 予算全件ファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              予算全件ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">本ツール「予算明細」で作成した予算ファイル</p>
+            <label for="yojitsuYosanInput" id="yojitsuYosanRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yojitsuYosanLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yojitsuYosanInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 投資実績ファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              投資実績ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">本ツール「投資実績」で作成したファイル（内部の「投資発生」シートを使用）</p>
+            <label for="yojitsuToushiInput" id="yojitsuToushiRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yojitsuToushiLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yojitsuToushiInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- 予算詳細ファイル -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              予算詳細ファイル <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-slate-400 mb-2">「予算」シートを読み込みます</p>
+            <label for="yojitsuKishoInput" id="yojitsuKishoRow"
+              class="flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-lg px-4 py-3 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+              <svg class="w-5 h-5 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <span id="yojitsuKishoLabel" class="text-slate-400 text-sm flex-1 truncate">ファイルを選択...</span>
+              <span class="text-indigo-600 text-sm font-medium flex-shrink-0">選択</span>
+            </label>
+            <input type="file" id="yojitsuKishoInput" accept=".xlsx,.xls" class="hidden">
+          </div>
+
+          <!-- Execute -->
+          <button id="yojitsuExecBtn" disabled
+            class="w-full py-3 rounded-xl font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            実行
+          </button>
+
+          <!-- Progress -->
+          <div id="yojitsuProgress" style="display:none" class="space-y-1">
+            <div id="yojitsuStep1Row" class="flex items-center gap-2 text-sm text-slate-500">
+              <span id="yojitsuStep1Icon">○</span><span>ステップ1: 仕訳明細を貼り付け中...</span>
+            </div>
+            <div id="yojitsuStep2Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="yojitsuStep2Icon">○</span><span>ステップ2: 予算全件を貼り付け中...</span>
+            </div>
+            <div id="yojitsuStep3Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="yojitsuStep3Icon">○</span><span>ステップ3: 減価償却を貼り付け中...</span>
+            </div>
+            <div id="yojitsuStep4Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="yojitsuStep4Icon">○</span><span>ステップ4: 案件別予算を貼り付け中...</span>
+            </div>
+            <div id="yojitsuStep5Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="yojitsuStep5Icon">○</span><span>ステップ5: フィルタクリア中...</span>
+            </div>
+            <div id="yojitsuStep6Row" class="flex items-center gap-2 text-sm text-slate-400">
+              <span id="yojitsuStep6Icon">○</span><span>ステップ6: 予実明細チェックへの新規行追加中...</span>
+            </div>
+          </div>
+
+          <!-- Success -->
+          <div id="yojitsuSuccess" style="display:none" class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <div>
+              <p class="text-emerald-800 font-medium text-sm">取込が完了しました</p>
+              <p id="yojitsuSuccessDetail" class="text-emerald-600 text-xs mt-0.5"></p>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="yojitsuError" style="display:none" class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p id="yojitsuErrorMsg" class="text-red-800 text-sm"></p>
+          </div>
+
+          <!-- Download -->
+          <div id="yojitsuDownloadArea" style="display:none">
+            <a id="dlYojitsu" href="#"
+              class="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+              <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              予実チェックファイルをダウンロード
             </a>
           </div>
 
@@ -1630,7 +1798,7 @@
     // タブ切り替え
     // =====================================================
     function switchTab(n) {
-      [1, 2, 3, 4].forEach(i => {
+      [1, 2, 3, 4, 5].forEach(i => {
         document.getElementById('panel' + i).style.display = i === n ? 'block' : 'none';
         document.getElementById('tab' + i).className = i === n
           ? 'flex-1 py-2 px-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition-colors'
@@ -1825,15 +1993,89 @@
       };
     }
 
+    // テーマカラー(theme+tint)をRGBに変換する(ECMA-376 18.8.3、固定資産台帳/index.htmlと同じ計算式)。
+    // Excelの「テーマの色」パレットで背景色を選ぶと、セルには<fgColor rgb="...">ではなく
+    // <fgColor theme="N" tint="T"/>で保存されるため、rgb属性だけを見ていると色なしと誤判定する
+    function hex2rgbArr(hex) {
+      const o = hex.slice(hex[0] === '#' ? 1 : 0).slice(0, 6);
+      return [parseInt(o.slice(0, 2), 16), parseInt(o.slice(2, 4), 16), parseInt(o.slice(4, 6), 16)];
+    }
+    function rgbArr2hex(rgb) {
+      let o = 1;
+      for (let i = 0; i !== 3; ++i) o = o * 256 + Math.max(0, Math.min(255, rgb[i]));
+      return o.toString(16).toUpperCase().slice(1);
+    }
+    function rgb2hsl(rgb) {
+      const R = rgb[0] / 255, G = rgb[1] / 255, B = rgb[2] / 255;
+      const M = Math.max(R, G, B), m = Math.min(R, G, B), C = M - m;
+      if (C === 0) return [0, 0, R];
+      let H6 = 0;
+      const L2 = M + m;
+      const S = C / (L2 > 1 ? 2 - L2 : L2);
+      if (M === R) H6 = ((G - B) / C + 6) % 6;
+      else if (M === G) H6 = (B - R) / C + 2;
+      else H6 = (R - G) / C + 4;
+      return [H6 / 6, S, L2 / 2];
+    }
+    function hsl2rgb(hsl) {
+      const H = hsl[0], S = hsl[1], L = hsl[2];
+      const C = S * 2 * (L < 0.5 ? L : 1 - L), m = L - C / 2;
+      const rgb = [m, m, m];
+      const h6 = 6 * H;
+      let X;
+      if (S !== 0) {
+        switch (h6 | 0) {
+          case 0: case 6: X = C * h6; rgb[0] += C; rgb[1] += X; break;
+          case 1: X = C * (2 - h6);   rgb[0] += X; rgb[1] += C; break;
+          case 2: X = C * (h6 - 2);   rgb[1] += C; rgb[2] += X; break;
+          case 3: X = C * (4 - h6);   rgb[1] += X; rgb[2] += C; break;
+          case 4: X = C * (h6 - 4);   rgb[2] += C; rgb[0] += X; break;
+          case 5: X = C * (6 - h6);   rgb[2] += X; rgb[0] += C; break;
+        }
+      }
+      for (let i = 0; i !== 3; ++i) rgb[i] = Math.round(rgb[i] * 255);
+      return rgb;
+    }
+    function applyThemeTint(hex, tint) {
+      if (!tint) return hex;
+      const hsl = rgb2hsl(hex2rgbArr(hex));
+      hsl[2] = tint < 0 ? hsl[2] * (1 + tint) : 1 - (1 - hsl[2]) * (1 - tint);
+      return rgbArr2hex(hsl2rgb(hsl));
+    }
+
+    // xl/theme/theme1.xmlの<a:clrScheme>から、Excelのtheme色index(0-11)順の16進配列を作る。
+    // XML内の並び(dk1,lt1,dk2,lt2,accent1-6,hlink,folHlink)とExcelのtheme index順は
+    // dk1/lt1が入れ替わる点に注意(0=lt1,1=dk1,2=lt2,3=dk2,4-9=accent1-6,10=hlink,11=folHlink)
+    function parseThemeClrScheme(themeXml) {
+      const m = themeXml.match(/<a:clrScheme[^>]*>([\s\S]*?)<\/a:clrScheme>/);
+      if (!m) return null;
+      const body = m[1];
+      const order = ['dk1','lt1','dk2','lt2','accent1','accent2','accent3','accent4','accent5','accent6','hlink','folHlink'];
+      const raw = {};
+      for (const key of order) {
+        const tagM = body.match(new RegExp(`<a:${key}>([\\s\\S]*?)<\\/a:${key}>`));
+        if (!tagM) continue;
+        const inner = tagM[1];
+        const srgbM = inner.match(/<a:srgbClr\b[^>]*\bval="([0-9A-Fa-f]{6})"/);
+        const sysM  = inner.match(/<a:sysClr\b[^>]*\blastClr="([0-9A-Fa-f]{6})"/);
+        raw[key] = srgbM ? srgbM[1] : (sysM ? sysM[1] : null);
+      }
+      return [raw.lt1, raw.dk1, raw.lt2, raw.dk2, raw.accent1, raw.accent2, raw.accent3, raw.accent4, raw.accent5, raw.accent6, raw.hlink, raw.folHlink];
+    }
+
     // 仕訳累計ZIPの各セル背景色を (row,col)→argb マップとして返す
-    async function extractCellFillsFromKeihi(keihiBytes) {
+    async function extractCellFillsFromKeihi(keihiBytes, sheetName = null) {
       try {
         const zip = await JSZip.loadAsync(keihiBytes.buffer ?? keihiBytes);
         const stylesFile = zip.file('xl/styles.xml');
         if (!stylesFile) return {};
         const stylesXml = await stylesFile.async('string');
 
-        // fills: index → argb (solid のみ)
+        let themeClrScheme = null;
+        const themeFile = zip.file('xl/theme/theme1.xml');
+        if (themeFile) themeClrScheme = parseThemeClrScheme(await themeFile.async('string'));
+
+        // fills: index → argb (solid のみ)。rgb属性が無い場合はtheme+tintから解決を試みる
         const fillArgbs = [];
         const fillRe = /<fill>([\s\S]*?)<\/fill>/g;
         let fm;
@@ -1841,7 +2083,20 @@
           const inner = fm[1];
           if (/patternType="solid"/.test(inner)) {
             const fgM = inner.match(/\bfgColor\b[^>]*\brgb="([0-9A-Fa-f]{6,8})"/);
-            fillArgbs.push(fgM ? fgM[1].toUpperCase() : null);
+            if (fgM) {
+              fillArgbs.push(fgM[1].toUpperCase());
+            } else {
+              const themeM = inner.match(/<fgColor\b[^>]*\btheme="(\d+)"/);
+              if (themeM && themeClrScheme) {
+                const idx  = parseInt(themeM[1]);
+                const tintM = inner.match(/<fgColor\b[^>]*\btint="(-?[\d.]+)"/);
+                const tint = tintM ? parseFloat(tintM[1]) : 0;
+                const base = themeClrScheme[idx];
+                fillArgbs.push(base ? applyThemeTint(base, tint).toUpperCase() : null);
+              } else {
+                fillArgbs.push(null);
+              }
+            }
           } else {
             fillArgbs.push(null);
           }
@@ -1861,9 +2116,9 @@
 
         // シートXMLから (row,col) → argb を構築
         const sheetPaths = await getSheetPaths(zip);
-        const firstPath  = Object.values(sheetPaths)[0];
-        if (!firstPath || !zip.file(firstPath)) return {};
-        const sheetXml   = await zip.file(firstPath).async('string');
+        const targetPath = (sheetName && sheetPaths[sheetName]) || Object.values(sheetPaths)[0];
+        if (!targetPath || !zip.file(targetPath)) return {};
+        const sheetXml   = await zip.file(targetPath).async('string');
 
         const cellFillMap = {};
         const cellRe = /<c\b([^>]*)>/g;
@@ -2076,21 +2331,54 @@
     }
 
     // シートXMLのデータ行(r>=2)から 列インデックス→スタイルindex を収集
-    function extractColStylesFromXml(sheetXml) {
+    // データ行にセル単位の書式が一切無い列(既存データ行が乏しいシート等)向けに、
+    // <cols>の列全体の既定スタイル(style属性)をフォールバックとして先に埋めておく
+    // colLevelIdxs: <cols>フォールバックのみで決まった(セル単位の書式が無かった)列インデックスの集合。
+    // これらは意図的な列の標準書式(背景色含む)なので、呼び出し側でclearFillMapによる
+    // 背景色クリア対象から除外すること(セル単位で偶然ついた色の多数決とは区別する)
+    // dataStartRowより上(固定ヘッダー+集計行)は実データと無関係な書式(空行の埋め草書式等)を
+    // 持つことがあるため、まず実データ領域(dataStartRow以降、前回実行分が残っていれば)から
+    // 列ごとの書式を優先的に採用し、そこで見つからなかった列だけ2行目以降(旧来の挙動)で補う
+    function extractColStylesFromXml(sheetXml, dataStartRow = 2) {
       const colStyles = {};
-      const re = /<c\b([^>]*)>/g;
-      let m;
-      while ((m = re.exec(sheetXml)) !== null) {
-        const attrs = m[1];
-        const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
-        if (!rM || parseInt(rM[2]) < 2) continue;
-        const sM = attrs.match(/\bs="(\d+)"/);
-        if (sM) {
-          const c = xlColToIdx(rM[1]);
-          if (!(c in colStyles)) colStyles[c] = parseInt(sM[1]);
+      const colLevelIdxs = new Set();
+      const colsBlock = sheetXml.match(/<cols>([\s\S]*?)<\/cols>/);
+      if (colsBlock) {
+        const colRe = /<col\b([^>]*)\/>/g;
+        let cm;
+        while ((cm = colRe.exec(colsBlock[1])) !== null) {
+          const attrs = cm[1];
+          const minM = attrs.match(/\bmin="(\d+)"/);
+          const maxM = attrs.match(/\bmax="(\d+)"/);
+          const styleM = attrs.match(/\bstyle="(\d+)"/);
+          if (!minM || !maxM || !styleM) continue;
+          const min = parseInt(minM[1]), max = parseInt(maxM[1]);
+          const s = parseInt(styleM[1]);
+          for (let c = min - 1; c <= max - 1; c++) { colStyles[c] = s; colLevelIdxs.add(c); }
         }
       }
-      return colStyles;
+      const cellStyleSet = new Set();
+      const scanFrom = (minRow) => {
+        const re = /<c\b([^>]*)>/g;
+        let m;
+        while ((m = re.exec(sheetXml)) !== null) {
+          const attrs = m[1];
+          const rM = attrs.match(/\br="([A-Z]+)(\d+)"/);
+          if (!rM || parseInt(rM[2]) < minRow) continue;
+          const sM = attrs.match(/\bs="(\d+)"/);
+          if (sM) {
+            const c = xlColToIdx(rM[1]);
+            if (!cellStyleSet.has(c)) {
+              colStyles[c] = parseInt(sM[1]);
+              cellStyleSet.add(c);
+              colLevelIdxs.delete(c);
+            }
+          }
+        }
+      };
+      if (dataStartRow > 2) scanFrom(dataStartRow);
+      scanFrom(2);
+      return { colStyles, colLevelIdxs };
     }
 
     function xlColToIdx(letters) {
@@ -2106,28 +2394,31 @@
     }
 
     // SheetJSワークシートのデータ行(R>=1)をXML row文字列に変換
-    function generateDataRowsXml(ws, colStyles, highlightXfs = {}, clearFillMap = {}, rgbToXfIdx = {}) {
+    function generateDataRowsXml(ws, colStyles, highlightXfs = {}, clearFillMap = {}, rgbToXfIdx = {}, dataStartRow = 2) {
       if (!ws || !ws['!ref']) return '';
       const range = XLSX.utils.decode_range(ws['!ref']);
       const rows = [];
       for (let R = 1; R <= range.e.r; R++) {
-        const xmlRow = R + 1; // header=1, data starts at 2
+        const xmlRow = R - 1 + dataStartRow; // ws行0=見出し、R=1が実データ1行目→dataStartRow行目
         const cells = [];
         for (let C = range.s.c; C <= range.e.c; C++) {
           const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-          if (!cell || ((cell.v == null || cell.v === '') && !cell._highlight && !cell._fillRgb)) continue;
-          const ref  = `${xlIdxToCol(C)}${xmlRow}`;
+          const hasValue = cell && cell.v != null && cell.v !== '';
           let sIdx;
-          if (cell._highlight && highlightXfs[cell._highlight] !== undefined) {
+          if (cell && cell._highlight && highlightXfs[cell._highlight] !== undefined) {
             sIdx = highlightXfs[cell._highlight];
-          } else if (cell._fillRgb && rgbToXfIdx[cell._fillRgb] !== undefined) {
+          } else if (cell && cell._fillRgb && rgbToXfIdx[cell._fillRgb] !== undefined) {
             sIdx = rgbToXfIdx[cell._fillRgb];
           } else {
             const origIdx = colStyles[C];
             sIdx = origIdx !== undefined ? (clearFillMap[origIdx] ?? origIdx) : undefined;
           }
+          // 値も色も無いセルはスキップ。値が無くても列書式(sIdx)があれば
+          // 空セルとして出力し、書式(背景色含む)だけは列に残す
+          if (!hasValue && sIdx === undefined) continue;
+          const ref  = `${xlIdxToCol(C)}${xmlRow}`;
           const sAttr = sIdx !== undefined ? ` s="${sIdx}"` : '';
-          const xml  = sheetCellToXml(cell, ref, sAttr);
+          const xml  = hasValue ? sheetCellToXml(cell, ref, sAttr) : (sAttr ? `<c r="${ref}"${sAttr}/>` : '');
           if (xml) cells.push(xml);
         }
         if (cells.length) rows.push(`<row r="${xmlRow}">${cells.join('')}</row>`);
@@ -2153,19 +2444,54 @@
         return `<c r="${ref}" t="inlineStr"${sAttr}><is><t>${esc}</t></is></c>`;
       }
       if (cell.t === 'b') return `<c r="${ref}" t="b"${sAttr}><v>${cell.v?1:0}</v></c>`;
+      // t==='z'(sheetStubs:trueで生成される値なしセル)等、値を持たない型でも
+      // 色(sAttr)だけは失わないよう、スタイル付き空セルとして出力する
+      if (sAttr) return `<c r="${ref}"${sAttr}/>`;
       return '';
     }
 
     // sheetData 内のデータ行を差し替え。ヘッダー行 r="1" は保持
-    function replaceSheetDataRows(sheetXml, newRowsXml) {
+    // 固定集計行(dataStartRowより上の行)の数式のうち、データ範囲を参照している部分
+    // (例: SUMIF($L$27:$L$552,...) や SUM(AE27:AE857))を、実際に貼り付けたデータの
+    // 最終行(newLastDataRow)に合わせて更新する。開始行がdataStartRowまたはdataStartRow-1
+    // (テンプレート側の表記ゆれを許容)の範囲だけを対象にし、開始行が終了行だけを新しい実データ
+    // 最終行に置き換える。集計行内部の小計範囲(例: SUM(AE4:AE9))は開始行が一致しないため対象外
+    function updateFooterDataRanges(formula, dataStartRow, newLastDataRow) {
+      if (!formula) return formula;
+      const rangeRe = /(\$?[A-Za-z]{1,3}\$?)(\d{1,7})(:\$?[A-Za-z]{1,3}\$?)\d{1,7}/g;
+      return formula.replace(rangeRe, (whole, colPart1, row1Str, colPart2) => {
+        const row1 = parseInt(row1Str, 10);
+        if (row1 === dataStartRow || row1 === dataStartRow - 1) {
+          return `${colPart1}${row1Str}${colPart2}${newLastDataRow}`;
+        }
+        return whole;
+      });
+    }
+
+    // dataStartRow(1始まり)より前の行(既定では見出し行のみ、固定集計行を使う場合はそれも含む)を
+    // テンプレートのまま保持し、dataStartRow以降だけを新データで置き換える。
+    // newLastDataRowを渡すと、保持した行内の数式もupdateFooterDataRangesで実データ件数に合わせて更新する
+    function replaceSheetDataRows(sheetXml, newRowsXml, dataStartRow = 2, newLastDataRow = null) {
       if (/<sheetData\s*\/>/.test(sheetXml)) {
         return sheetXml.replace(/<sheetData\s*\/>/, `<sheetData>${newRowsXml}</sheetData>`);
       }
       return sheetXml.replace(
         /(<sheetData[^>]*>)([\s\S]*?)(<\/sheetData>)/,
         (_, open, content, close) => {
-          const hdr = (content.match(/<row\b[^>]*\br="1"[^>]*>[\s\S]*?<\/row>/) || [''])[0];
-          return `${open}${hdr}${newRowsXml}${close}`;
+          const rowRe = /<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g;
+          let m, kept = '';
+          while ((m = rowRe.exec(content)) !== null) {
+            if (parseInt(m[1], 10) >= dataStartRow) continue;
+            let rowXml = m[0];
+            if (newLastDataRow !== null) {
+              rowXml = rowXml.replace(/<f\b([^>]*)>([^<]*)<\/f>/g, (mm, fAttrs, fText) => {
+                if (!fText) return mm;
+                return `<f${fAttrs}>${updateFooterDataRanges(fText, dataStartRow, newLastDataRow)}</f>`;
+              });
+            }
+            kept += rowXml;
+          }
+          return `${open}${kept}${newRowsXml}${close}`;
         }
       );
     }
@@ -2353,6 +2679,21 @@
       zip.file(sheetPath, sheetXml);
     }
 
+// 指定シートのAutoFilterの「絞り込み条件」だけを解除する(フィルタボタン自体・範囲設定は残す)。
+    // 前回実行時の絞り込み条件が残ったままだと新しいデータの一部が隠れて見えなくなるため、
+    // <autoFilter ref="...">...</autoFilter>の中身(filterColumn等の条件)だけを取り除き、
+    // <autoFilter ref="..."/>という自己終了タグに変換する。ref属性(フィルタ範囲=フィルタ設定そのもの)や
+    // workbook.xml側の_xlnm._FilterDatabase定義名には触れない
+    async function clearAutoFilterCriteria(zip, sheetPath) {
+      if (!sheetPath || !zip.file(sheetPath)) return;
+      const sheetXml = await zip.file(sheetPath).async('string');
+      const newSheetXml = sheetXml.replace(
+        /<autoFilter\b([^>]*)>[\s\S]*?<\/autoFilter>/g,
+        (_, attrs) => `<autoFilter${attrs}/>`
+      );
+      if (newSheetXml !== sheetXml) zip.file(sheetPath, newSheetXml);
+    }
+
     // テンプレートZIPを直接編集して出力xlsxを生成
     async function generateOutputUsingTemplate(templateBytes, destWb) {
       if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
@@ -2373,13 +2714,16 @@
       }
 
       // 列スタイルを抽出・使用中 xf インデックスを収集
+      // (<cols>フォールバックのみの列は意図的な標準書式のため、背景色クリア対象から除外)
       const colStylesMap = {};
       const usedXfSet    = new Set();
       for (const name of sheetNames) {
         if (!sheetXmlMap[name]) continue;
-        const cs = extractColStylesFromXml(sheetXmlMap[name]);
+        const { colStyles: cs, colLevelIdxs } = extractColStylesFromXml(sheetXmlMap[name]);
         colStylesMap[name] = cs;
-        for (const idx of Object.values(cs)) usedXfSet.add(idx);
+        for (const [c, idx] of Object.entries(cs)) {
+          if (!colLevelIdxs.has(+c)) usedXfSet.add(idx);
+        }
       }
 
       // 経費発生セルの _fillRgb（仕訳累計由来）を収集
@@ -2690,9 +3034,11 @@
       let xml = stylesXml;
       const fillsCountMatch = xml.match(/<fills count="(\d+)"/);
       const fillsCount = fillsCountMatch ? +fillsCountMatch[1] : 2;
+      // 6桁(RGBのみ)なら先頭にアルファ"FF"を補う。8桁(ARGB、実ファイルから読み取った色はこちら)はそのまま使う
+      const toArgb = (argb) => argb.length >= 8 ? argb : `FF${argb}`;
       if (unique.length) {
         const newFills = unique.map(argb =>
-          `<fill><patternFill patternType="solid"><fgColor rgb="FF${argb}"/><bgColor indexed="64"/></patternFill></fill>`
+          `<fill><patternFill patternType="solid"><fgColor rgb="${toArgb(argb)}"/><bgColor indexed="64"/></patternFill></fill>`
         ).join('');
         xml = xml
           .replace(/<fills count="\d+"/, `<fills count="${fillsCount + unique.length}"`)
@@ -2705,6 +3051,71 @@
       const colorXfs = unique.map((argb, i) => {
         rgbToXfIdx[argb] = xfsCount + i;
         return `<xf numFmtId="0" fontId="0" fillId="${fillsCount + i}" borderId="0" xfId="0" applyFill="1"/>`;
+      });
+
+      const clearFillMap = {};
+      const noFillXfs = [];
+      [...new Set(usedXfIdxs)].forEach((origIdx, i) => {
+        clearFillMap[origIdx] = xfsCount + colorXfs.length + i;
+        noFillXfs.push(cloneNoFill(getXf(origIdx) ?? fallback));
+      });
+
+      const totalNew = colorXfs.length + noFillXfs.length;
+      if (totalNew) {
+        xml = xml
+          .replace(/<cellXfs count="\d+"/, `<cellXfs count="${xfsCount + totalNew}"`)
+          .replace('</cellXfs>', colorXfs.join('') + noFillXfs.join('') + '</cellXfs>');
+      }
+
+      return { xml, rgbToXfIdx, clearFillMap };
+    }
+
+    // addColorFillStylesSimpleの列対応版。色を追加するxfを共通の空xfから作るのではなく、
+    // その列の元書式(colStylesのxf。数値書式・フォント・罫線を含む)をクローンして塗りつぶしだけ
+    // 差し替える。同じ色でも列が違えば罫線等が異なりうるため、(列,ARGB)の組み合わせ単位でxfを分ける
+    function addColorFillStylesByCol(stylesXml, colorReqs, colStyles, usedXfIdxs = []) {
+      const cellXfsM       = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const cellXfsContent = cellXfsM ? cellXfsM[1] : '';
+      const getXf = (idx) => {
+        if (idx === undefined || idx === null) return null;
+        const re = /<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g;
+        let i = 0, m;
+        while ((m = re.exec(cellXfsContent)) !== null) { if (i++ === idx) return m[0]; }
+        return null;
+      };
+      const fallback = '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+      const cloneWithFill = (xfXml, fillId) => {
+        let s = xfXml;
+        s = /\bfillId="/.test(s) ? s.replace(/\bfillId="\d+"/, `fillId="${fillId}"`) : s.replace('<xf', `<xf fillId="${fillId}"`);
+        s = /\bapplyFill="/.test(s) ? s.replace(/\bapplyFill="\w+"/, 'applyFill="1"') : s.replace('<xf', '<xf applyFill="1"');
+        return s;
+      };
+      const cloneNoFill = (xfXml) => cloneWithFill(xfXml, 0);
+
+      let xml = stylesXml;
+      const fillsCountMatch = xml.match(/<fills count="(\d+)"/);
+      const fillsCount = fillsCountMatch ? +fillsCountMatch[1] : 2;
+      const toArgb = (argb) => argb.length >= 8 ? argb : `FF${argb}`;
+
+      const uniqueCombos = [...new Map(colorReqs.map(r => [`${r.col}::${r.argb}`, r])).values()];
+      const uniqueArgbs  = [...new Set(uniqueCombos.map(r => r.argb))];
+      if (uniqueArgbs.length) {
+        const newFills = uniqueArgbs.map(argb =>
+          `<fill><patternFill patternType="solid"><fgColor rgb="${toArgb(argb)}"/><bgColor indexed="64"/></patternFill></fill>`
+        ).join('');
+        xml = xml
+          .replace(/<fills count="\d+"/, `<fills count="${fillsCount + uniqueArgbs.length}"`)
+          .replace('</fills>', newFills + '</fills>');
+      }
+      const fillIdxOf = (argb) => fillsCount + uniqueArgbs.indexOf(argb);
+
+      const xfsCountMatch = xml.match(/<cellXfs count="(\d+)"/);
+      const xfsCount = xfsCountMatch ? +xfsCountMatch[1] : 1;
+
+      const rgbToXfIdx = {};
+      const colorXfs = uniqueCombos.map(({ col, argb }, i) => {
+        rgbToXfIdx[`${col}::${argb}`] = xfsCount + i;
+        return cloneWithFill(getXf(colStyles[col]) ?? fallback, fillIdxOf(argb));
       });
 
       const clearFillMap = {};
@@ -2863,6 +3274,1025 @@
       }
 
       return { ws, rowCount: range.e.r, matchedCount, unmatchedCount };
+    }
+
+    // =====================================================
+    // Card 5: 予実チェック取込 UI
+    // =====================================================
+    const yojitsuDateInput     = document.getElementById('yojitsuDateInput');
+    const yojitsuTemplateInput = document.getElementById('yojitsuTemplateInput');
+    const yojitsuTemplateLabel = document.getElementById('yojitsuTemplateLabel');
+    const yojitsuTemplateRow   = document.getElementById('yojitsuTemplateRow');
+    const yojitsuShiwakeInput  = document.getElementById('yojitsuShiwakeInput');
+    const yojitsuShiwakeLabel  = document.getElementById('yojitsuShiwakeLabel');
+    const yojitsuShiwakeRow    = document.getElementById('yojitsuShiwakeRow');
+    const yojitsuYosanInput    = document.getElementById('yojitsuYosanInput');
+    const yojitsuYosanLabel    = document.getElementById('yojitsuYosanLabel');
+    const yojitsuYosanRow      = document.getElementById('yojitsuYosanRow');
+    const yojitsuToushiInput   = document.getElementById('yojitsuToushiInput');
+    const yojitsuToushiLabel   = document.getElementById('yojitsuToushiLabel');
+    const yojitsuToushiRow     = document.getElementById('yojitsuToushiRow');
+    const yojitsuKishoInput    = document.getElementById('yojitsuKishoInput');
+    const yojitsuKishoLabel    = document.getElementById('yojitsuKishoLabel');
+    const yojitsuKishoRow      = document.getElementById('yojitsuKishoRow');
+    const yojitsuExecBtn       = document.getElementById('yojitsuExecBtn');
+    const yojitsuProgress      = document.getElementById('yojitsuProgress');
+    const yojitsuSuccess       = document.getElementById('yojitsuSuccess');
+    const yojitsuSuccessDetail = document.getElementById('yojitsuSuccessDetail');
+    const yojitsuError         = document.getElementById('yojitsuError');
+    const yojitsuErrorMsg      = document.getElementById('yojitsuErrorMsg');
+    const yojitsuDownloadArea  = document.getElementById('yojitsuDownloadArea');
+    const dlYojitsu            = document.getElementById('dlYojitsu');
+
+    let yojitsuTemplateFile = null;
+    let yojitsuShiwakeFile  = null;
+    let yojitsuYosanFile    = null;
+    let yojitsuToushiFile   = null;
+    let yojitsuKishoFile    = null;
+
+    function updateYojitsuBtn() {
+      yojitsuExecBtn.disabled = !(
+        yojitsuTemplateFile && yojitsuShiwakeFile && yojitsuYosanFile && yojitsuToushiFile && yojitsuKishoFile &&
+        yojitsuDateInput.value
+      );
+    }
+    yojitsuDateInput.addEventListener('change', updateYojitsuBtn);
+
+    function setupYojitsuFile(input, label, row, setFn) {
+      input.addEventListener('change', () => {
+        const f = input.files[0];
+        setFn(f || null);
+        label.textContent = f ? f.name : 'ファイルを選択...';
+        label.className = f ? 'text-slate-700 text-sm flex-1 truncate font-medium' : 'text-slate-400 text-sm flex-1 truncate';
+        updateYojitsuBtn();
+      });
+      setupFileDrop(row, f => {
+        setFn(f);
+        label.textContent = f.name;
+        label.className = 'text-slate-700 text-sm flex-1 truncate font-medium';
+        updateYojitsuBtn();
+      });
+    }
+    setupYojitsuFile(yojitsuTemplateInput, yojitsuTemplateLabel, yojitsuTemplateRow, f => yojitsuTemplateFile = f);
+    setupYojitsuFile(yojitsuShiwakeInput,  yojitsuShiwakeLabel,  yojitsuShiwakeRow,  f => yojitsuShiwakeFile  = f);
+    setupYojitsuFile(yojitsuYosanInput,    yojitsuYosanLabel,    yojitsuYosanRow,    f => yojitsuYosanFile    = f);
+    setupYojitsuFile(yojitsuToushiInput,   yojitsuToushiLabel,   yojitsuToushiRow,   f => yojitsuToushiFile   = f);
+    setupYojitsuFile(yojitsuKishoInput,    yojitsuKishoLabel,    yojitsuKishoRow,    f => yojitsuKishoFile    = f);
+
+    function resetYojitsu() {
+      yojitsuSuccess.style.display = 'none';
+      yojitsuError.style.display = 'none';
+      yojitsuDownloadArea.style.display = 'none';
+      if (dlYojitsu._objUrl) { URL.revokeObjectURL(dlYojitsu._objUrl); dlYojitsu._objUrl = null; }
+      for (let n = 1; n <= 6; n++) {
+        const icon = document.getElementById('yojitsuStep' + n + 'Icon');
+        const row  = document.getElementById('yojitsuStep' + n + 'Row');
+        icon.textContent = '○';
+        row.className = 'flex items-center gap-2 text-sm ' + (n === 1 ? 'text-slate-500' : 'text-slate-400');
+      }
+    }
+
+    function setYojitsuStep(n, state) {
+      const icon = document.getElementById('yojitsuStep' + n + 'Icon');
+      const row  = document.getElementById('yojitsuStep' + n + 'Row');
+      if (state === 'active') {
+        icon.textContent = '▶';
+        row.classList.replace('text-slate-400', 'text-slate-800');
+      } else if (state === 'done') {
+        icon.textContent = '✓';
+        row.classList.add('text-emerald-600');
+        row.classList.remove('text-slate-800', 'text-slate-400', 'text-slate-500');
+      }
+    }
+
+    yojitsuExecBtn.addEventListener('click', async () => {
+      if (!(yojitsuTemplateFile && yojitsuShiwakeFile && yojitsuYosanFile && yojitsuToushiFile && yojitsuKishoFile && yojitsuDateInput.value)) return;
+      yojitsuExecBtn.disabled = true;
+      yojitsuExecBtn.textContent = '処理中...';
+      resetYojitsu();
+      yojitsuProgress.style.display = 'block';
+
+      try {
+        const templateBytes = new Uint8Array(await yojitsuTemplateFile.arrayBuffer());
+        const shiwakeBytes  = new Uint8Array(await yojitsuShiwakeFile.arrayBuffer());
+        const yosanBytes    = new Uint8Array(await yojitsuYosanFile.arrayBuffer());
+        const toushiBytes   = new Uint8Array(await yojitsuToushiFile.arrayBuffer());
+        const kishoBytes    = new Uint8Array(await yojitsuKishoFile.arrayBuffer());
+
+        const outBytes = await generateYojitsuCheckOutput(
+          templateBytes, shiwakeBytes, yosanBytes, toushiBytes, kishoBytes,
+          (n, state) => setYojitsuStep(n, state)
+        );
+
+        const [yr, mo] = yojitsuDateInput.value.split('-').map(Number);
+        const outName = `${yr}年度予実チェック_${yr}${String(mo).padStart(2, '0')}.xlsx`;
+        const blob = new Blob([outBytes], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        dlYojitsu._objUrl = url;
+        dlYojitsu.href = url;
+        dlYojitsu.download = outName;
+
+        yojitsuSuccessDetail.textContent = `${outName} を生成しました`;
+        yojitsuSuccess.style.display = 'flex';
+        yojitsuDownloadArea.style.display = 'block';
+
+      } catch (e) {
+        yojitsuErrorMsg.textContent = '処理エラー: ' + e.message;
+        yojitsuError.style.display = 'flex';
+      } finally {
+        yojitsuExecBtn.disabled = false;
+        yojitsuExecBtn.textContent = '実行';
+        updateYojitsuBtn();
+      }
+    });
+
+    // =====================================================
+    // Card 5: 予実チェック取込 処理ロジック
+    //   予実チェックワークブック(テンプレート)の4シートに各Cardの出力を
+    //   そのまま貼り付ける。ＰＦ別集計等の数式シートは一切書き換えず、
+    //   Excel側の再計算(forceFullCalcOnLoad)に委ねる
+    // =====================================================
+
+    // wsの指定列(0-indexed)が最初に空になった行以降を除外した新しいワークシートを返す。
+    // (予算詳細ファイルの「予算」シートはC列が空になったらそこでデータ終了とみなし、以降の行は転記しない)
+    function truncateAtFirstEmptyCol(ws, colIdx) {
+      if (!ws || !ws['!ref']) return ws;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      let lastR = range.s.r; // ヘッダー行のみ(データ1行目から即空なら以降なし)
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: colIdx })];
+        if (!cell || cell.v == null || cell.v === '') break;
+        lastR = R;
+      }
+      const out = {};
+      for (let R = range.s.r; R <= lastR; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (ws[addr]) out[addr] = ws[addr];
+        }
+      }
+      out['!ref'] = XLSX.utils.encode_range({ s: { r: range.s.r, c: range.s.c }, e: { r: lastR, c: range.e.c } });
+      return out;
+    }
+
+    // 数式文字列内のセル参照の列部分を、dropCol列の削除に合わせて補正する。
+    // dropColより右の列を参照している部分は1列左へシフトする(行番号はそのまま)。
+    // shiftFormulaRows(固定資産台帳/index.html)の列版。関数名(LOG10(等)や文字列リテラルを
+    // 誤って書き換えないよう、直前が英数字/アンダースコア/$のときは参照とみなさず、
+    // 直後が"("の場合(関数呼び出し)も除外する
+    function shiftFormulaColumns(formula, dropCol) {
+      if (!formula) return formula;
+      const cellRefRe = /^(\$?)([A-Za-z]{1,3})(\$?)(\d{1,7})(?!\()/;
+      let result = '', i = 0;
+      const len = formula.length;
+      while (i < len) {
+        const ch = formula[i];
+        if (ch === '"') {
+          let j = i + 1;
+          while (j < len) {
+            if (formula[j] === '"') { if (formula[j + 1] === '"') { j += 2; continue; } j += 1; break; }
+            j += 1;
+          }
+          result += formula.slice(i, j);
+          i = j;
+          continue;
+        }
+        const prevCh = i > 0 ? formula[i - 1] : '';
+        if (/[A-Za-z0-9_$]/.test(prevCh)) { result += ch; i += 1; continue; }
+        const m = cellRefRe.exec(formula.slice(i));
+        if (m) {
+          const [whole, colAbs, col, rowAbs, rowStr] = m;
+          const colIdx = xlColToIdx(col.toUpperCase());
+          const newColIdx = colIdx > dropCol ? colIdx - 1 : colIdx;
+          result += `${colAbs}${xlIdxToCol(newColIdx)}${rowAbs}${rowStr}`;
+          i += whole.length;
+          continue;
+        }
+        result += ch; i += 1;
+      }
+      return result;
+    }
+
+    // wsの指定列(0-indexed)を除外し、それより右の列を1つ左へ詰めた新しいワークシートを返す。
+    // 転記元に貼り付け先へ持ち込みたくない列がある場合に使う
+    // (案件別予算の転記で予算詳細ファイルの「予算」シートのG列を対象外にし、H列以降を1列左シフトするために使用)
+    // セルに数式(cell.f)が入っている場合、参照列もshiftFormulaColumnsで補正しないと
+    // 列がずれた分だけ集計範囲がずれてしまう(例: =SUM(J538:U538) → =SUM(I538:T538))
+    function dropColumnAndShiftLeft(ws, dropCol) {
+      if (!ws || !ws['!ref']) return ws;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const out = {};
+      let maxC = -1;
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          if (C === dropCol) continue;
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell) continue;
+          const destC = C > dropCol ? C - 1 : C;
+          const destCell = cell.f ? { ...cell, f: shiftFormulaColumns(cell.f, dropCol) } : cell;
+          out[XLSX.utils.encode_cell({ r: R, c: destC })] = destCell;
+          if (destC > maxC) maxC = destC;
+        }
+      }
+      out['!ref'] = XLSX.utils.encode_range({ s: { r: range.s.r, c: 0 }, e: { r: range.e.r, c: Math.max(maxC, 0) } });
+      return out;
+    }
+
+    // wsのpfColIdx列にある値の集合(Set)を返す(ヘッダー行=range.s.rは除く)。
+    // (予算全件ファイルで既に取り込み済みの案件番号を把握し、案件別予算シートへの二重転記を避けるために使用。
+    //  関数名・引数名はPfのままだが、任意の列を指定できる汎用実装)
+    // 案件番号は文字列のため、Number変換ではなく文字列として正規化(前後空白除去)して比較する。
+    // 数値として保存されているセルが混在していても、String()化すれば同じキーとして扱える。
+    function collectPfSet(ws, pfColIdx) {
+      const set = new Set();
+      if (!ws || !ws['!ref']) return set;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: pfColIdx })];
+        if (!cell || cell.v == null || cell.v === '') continue;
+        const s = String(cell.v).trim();
+        if (s !== '') set.add(s);
+      }
+      return set;
+    }
+
+    // 予算全件シートから、案件別予算(予算シート)への転記時に除外対象とする案件番号の集合を作る。
+    // I列(勘定コード, accountColIdx=8)が"2"始まり(投資科目)の行は、予算全件に計上されていても
+    // 除外対象の収集から除く(投資科目の案件番号は案件別予算側の明細を除外せず残す)
+    function collectYosanCaseNoExcludeSet(ws, caseNoColIdx, accountColIdx) {
+      const set = new Set();
+      if (!ws || !ws['!ref']) return set;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const accCell = ws[XLSX.utils.encode_cell({ r: R, c: accountColIdx })];
+        const accStr = accCell && accCell.v != null ? String(accCell.v).trim() : '';
+        if (accStr.startsWith('2')) continue; // I列が"2"始まり(投資科目)の行は除外対象に含めない
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: caseNoColIdx })];
+        if (!cell || cell.v == null || cell.v === '') continue;
+        const s = String(cell.v).trim();
+        if (s !== '') set.add(s);
+      }
+      return set;
+    }
+
+    // デバッグ用: Step4の案件番号重複除外の判定材料をブラウザのコンソール(F12開発者ツール)に出力する。
+    // 「除外されるはずが除外されない」調査のための一時的なログ。ブラウザ内で完結し外部送信は一切しない。
+    // 案件番号は文字列のため、文字列正規化(trim)結果を主な判定基準として表示する
+    function debugLogCaseNoExclusion(yosanWs, yosanColIdx, kishoWs, kishoColIdx, excludeSet) {
+      console.log('=== [デバッグ] Step4 案件番号重複除外 ===');
+      console.log('予算全件から収集した案件番号セット(文字列正規化後):', [...excludeSet].sort());
+
+      if (yosanWs && yosanWs['!ref']) {
+        const range = XLSX.utils.decode_range(yosanWs['!ref']);
+        const rows = [];
+        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+          const cell = yosanWs[XLSX.utils.encode_cell({ r: R, c: yosanColIdx })];
+          const raw = cell ? cell.v : undefined;
+          const s = raw != null && raw !== '' ? String(raw).trim() : null;
+          rows.push({ 行: R + 1, 生の値: raw, セル型: cell ? cell.t : '(セルなし)', 正規化結果: s });
+        }
+        console.log('予算全件シート 指定列(案件番号のはず)の値一覧:');
+        console.table(rows);
+      }
+
+      if (kishoWs && kishoWs['!ref']) {
+        const range = XLSX.utils.decode_range(kishoWs['!ref']);
+        const excluded = [], kept = [];
+        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+          const cell = kishoWs[XLSX.utils.encode_cell({ r: R, c: kishoColIdx })];
+          const raw = cell ? cell.v : undefined;
+          const s = raw != null && raw !== '' ? String(raw).trim() : null;
+          const isExcluded = s != null && s !== '' && excludeSet.has(s);
+          const info = { 行: R + 1, 生の値: raw, セル型: cell ? cell.t : '(セルなし)', 正規化結果: s };
+          (isExcluded ? excluded : kept).push(info);
+        }
+        console.log(`予算シート 指定列(案件番号のはず)のうち除外される行(${excluded.length}件):`);
+        console.table(excluded);
+        console.log(`予算シート 指定列(案件番号のはず)のうち除外されず残る行(${kept.length}件):`);
+        console.table(kept);
+      }
+      console.log('=== [デバッグここまで] ===');
+    }
+
+    // wsのpfColIdx列の値がexcludePfSetに含まれる行を除外し、残った行を隙間なく詰め直した
+    // 新しいワークシートを返す。行内の同一行参照の数式(cell.f、例: 集計行のSUM(J538:U538))は
+    // shiftSameRowFormulaで新しい行番号に補正する。
+    // (予算全件ファイルで取り込み済みの案件番号と重複するデータを、案件別予算シートへ転記する前に
+    //  除外するために使用。転記後に空行として残す方式だと見た目が悪くなるため、転記前に詰め直す)
+    // 案件番号は文字列のため、Number変換ではなく文字列として正規化(前後空白除去)して比較する
+    // (collectPfSetと同じ正規化方式でないとexcludePfSetとキーが噛み合わない)
+    // 戻り値のrowMapは「詰め直し後の行番号(0始まり) → 元の行番号」の対応表。
+    // pasteRowsIntoTemplateSheetのsrcRowOfDestRowに渡すことで、背景色引き継ぎ
+    // (extractCellFillsFromKeihi、元ファイルの行番号ベース)が詰め直し後も正しく対応する
+    function filterOutRowsByPf(ws, pfColIdx, excludePfSet) {
+      if (!ws || !ws['!ref'] || !excludePfSet || !excludePfSet.size) return { ws, rowMap: null };
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const out = {};
+      const rowMap = {};
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: range.s.r, c: C });
+        if (ws[addr]) out[addr] = ws[addr];
+      }
+      rowMap[range.s.r] = range.s.r;
+      let outR = range.s.r;
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const pfCell = ws[XLSX.utils.encode_cell({ r: R, c: pfColIdx })];
+        const pf = pfCell && pfCell.v != null && pfCell.v !== '' ? String(pfCell.v).trim() : null;
+        if (pf != null && pf !== '' && excludePfSet.has(pf)) continue; // 転記対象外(予算全件と重複する案件番号)
+        outR += 1;
+        rowMap[outR] = R;
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell) continue;
+          const destCell = (cell.f && outR !== R) ? { ...cell, f: shiftSameRowFormula(cell.f, R + 1, outR + 1) } : cell;
+          out[XLSX.utils.encode_cell({ r: outR, c: C })] = destCell;
+        }
+      }
+      out['!ref'] = XLSX.utils.encode_range({ s: { r: range.s.r, c: range.s.c }, e: { r: outR, c: range.e.c } });
+      return { ws: out, rowMap };
+    }
+
+    // ソースワークシートのデータ行を、テンプレート内の指定シートへ貼り付ける
+    // (ヘッダー行・列書式・列幅はテンプレート側を保持。Card4のパターンを再利用)
+    // sourceBytes/sourceSheetNameを渡すと、ソース側セルに付いている背景色(_fillRgb)を
+    // 貼り付け先の同じセルにも引き継ぐ(Card3のextractCellFillsFromKeihiと同じ仕組み)
+    // srcColOfDestCol: 貼り付け先の列インデックス→ソース(元ファイル)側の列インデックスを返す関数。
+    // wsの列構成がソースから列を除外/シフトして作られている場合(dropColumnAndShiftLeft等)、
+    // 色情報(extractCellFillsFromKeihiの戻り値)はソース側の列番号のままなので、対応付けが必要
+    // dataStartRow: データの貼り付け開始行(1始まり)。既定は2(1行目=ヘッダーのみ保持、従来通り)。
+    // 2より大きい値を渡すと、1〜dataStartRow-1行目をテンプレートのまま保持し(ヘッダー+固定集計行等)、
+    // dataStartRow行目以降だけを新データで置き換える。減価償却シートは集計行(SUM等)がPF別集計等
+    // 他シートから固定セル参照(=減価償却!AE10等)されるため、集計行をデータの上に固定配置して
+    // データ件数が変わっても参照先の行位置がズレないようにする(テンプレート側で集計行を上に配置)
+    // srcRowOfDestRow: 貼り付け先の行インデックス(0始まり)→ソース(元ファイル)側の行インデックスを返す関数。
+    // wsの行構成がソースから行を除外して詰め直されている場合(filterOutRowsByPf等)、
+    // 色情報(extractCellFillsFromKeihiの戻り値)はソース側の行番号のままなので、対応付けが必要
+    async function pasteRowsIntoTemplateSheet(zip, sheetPaths, sheetName, ws, sourceBytes = null, sourceSheetName = null, srcColOfDestCol = (c) => c, dataStartRow = 2, srcRowOfDestRow = (r) => r) {
+      const path = sheetPaths[sheetName];
+      if (!path || !zip.file(path)) throw new Error(`シート「${sheetName}」がテンプレートに見つかりません。`);
+      let xml = await zip.file(path).async('string');
+      const { colStyles, colLevelIdxs } = extractColStylesFromXml(xml, dataStartRow);
+
+      // ソース側の背景色付きセルを収集し、_fillRgbとして付与
+      // _fillRgbは「列::ARGB」の複合キーにしておく(同じ色でも列によって数値書式・フォント・罫線が
+      // 異なりうるため、色xfはこの後、列ごとの元書式をクローンして罫線等を保ったまま作る)
+      let colorReqs = [];
+
+      if (sourceBytes && typeof JSZip !== 'undefined' && typeof JSZip.loadAsync === 'function') {
+        const cellFillMap = await extractCellFillsFromKeihi(sourceBytes, sourceSheetName);
+        if (Object.keys(cellFillMap).length) {
+          const range = XLSX.utils.decode_range(ws['!ref']);
+          for (let R = 0; R <= range.e.r; R++) {
+            const srcR = srcRowOfDestRow(R);
+            for (let C = range.s.c; C <= range.e.c; C++) {
+              const argb = cellFillMap[`${srcR},${srcColOfDestCol(C)}`];
+              if (!argb) continue;
+              const addr = XLSX.utils.encode_cell({ r: R, c: C });
+              const cell = ws[addr];
+              if (cell) { cell._fillRgb = `${C}::${argb}`; colorReqs.push({ col: C, argb }); }
+            }
+          }
+        }
+      }
+
+      // 列書式(セル単位の多数決/先頭値)にたまたま背景色が付いていても、新規データ行には
+      // 引き継がないよう背景なしクローンをstyles.xmlに追加してclearFillMap経由で適用する
+      // (予算明細と同じ対策)。ただし<cols>フォールバックのみで決まった列は意図的な標準書式
+      // (背景色含む)なので、クリア対象から除外する
+      let clearFillMap = {}, rgbToXfIdx = {};
+      const stylesFile = zip.file('xl/styles.xml');
+      if (stylesFile) {
+        const stylesXml = await stylesFile.async('string');
+        const usedXfIdxs = Object.entries(colStyles)
+          .filter(([c]) => !colLevelIdxs.has(+c))
+          .map(([, v]) => v);
+        const { xml: newStyles, rgbToXfIdx: rtx, clearFillMap: cfm } =
+          addColorFillStylesByCol(stylesXml, colorReqs, colStyles, usedXfIdxs);
+        zip.file('xl/styles.xml', newStyles);
+        rgbToXfIdx = rtx;
+        clearFillMap = cfm;
+      }
+
+      const rowsXml = generateDataRowsXml(ws, colStyles, {}, clearFillMap, rgbToXfIdx, dataStartRow);
+      const dataRange = XLSX.utils.decode_range(ws['!ref']);
+      let dimEndR = Math.max(dataRange.e.r + dataStartRow - 2, dataStartRow - 2);
+      let dimEndC = dataRange.e.c;
+
+      // dataStartRowより上(ヘッダー+固定集計行)は列幅がデータより広いことがあるため、
+      // テンプレート側の元のdimensionの列幅も見て、狭い方に切り詰めないようにする
+      if (dataStartRow > 2) {
+        const origDimM = xml.match(/<dimension ref="[A-Za-z]+\d+:([A-Za-z]+)(\d+)"\/>/);
+        if (origDimM) {
+          const origEndC = xlColToIdx(origDimM[1].toUpperCase());
+          if (origEndC > dimEndC) dimEndC = origEndC;
+        }
+      }
+
+      // dataStartRow指定時は、固定集計行内の数式が参照するデータ範囲(SUMIF/SUM等の終端行)を
+      // 実際に貼り付けたデータの最終行に合わせて更新する(updateFooterDataRanges参照)
+      const rowCount = Math.max(dataRange.e.r, 0);
+      const newLastDataRow = dataStartRow > 2
+        ? (rowCount > 0 ? dataStartRow + rowCount - 1 : dataStartRow - 1)
+        : null;
+
+      xml = replaceSheetDataRows(xml, rowsXml, dataStartRow, newLastDataRow);
+      xml = updateSheetDimension(xml, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: dimEndR, c: dimEndC } }));
+      zip.file(path, xml);
+    }
+
+    // ============================================================
+    // 予実明細チェック: 未登録キー行の自動追加(Card5 Step6)
+    // ============================================================
+    // 転記した4シートから(PF,案件番号,勘定コード,勘定コード名称)を集める。
+    // 減価償却は必ず投資セクション、他3シートは必ず経費セクションに属する(ユーザー確認済みのルール)
+    function collectCheckSourceKeys(shiwakeWs, yosanWs, kishoWs, toushiWs) {
+      function extract(ws, colPF, colCase, colAccount, colName, section, fixedAccount, fixedName, sectionByAccount) {
+        const keys = [];
+        if (!ws || !ws['!ref']) return keys;
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = 1; R <= range.e.r; R++) {
+          const pfCell = ws[XLSX.utils.encode_cell({ r: R, c: colPF })];
+          const caseCell = ws[XLSX.utils.encode_cell({ r: R, c: colCase })];
+          const pf = pfCell && pfCell.v != null && pfCell.v !== '' ? Number(pfCell.v) : null;
+          const caseNo = caseCell && caseCell.v != null && caseCell.v !== '' ? String(caseCell.v) : null;
+          if (pf == null || Number.isNaN(pf) || !caseNo) continue;
+          let account, name;
+          if (fixedAccount != null) {
+            account = fixedAccount; name = fixedName;
+          } else {
+            const accCell = ws[XLSX.utils.encode_cell({ r: R, c: colAccount })];
+            const nameCell = ws[XLSX.utils.encode_cell({ r: R, c: colName })];
+            if (!accCell || accCell.v == null || accCell.v === '') continue;
+            account = Number(accCell.v);
+            name = nameCell && nameCell.v != null ? String(nameCell.v) : '';
+          }
+          // 投資/経費は勘定コード(account、D列に転記される値そのもの)の先頭が"2"始まりかどうかで判定する
+          // (区分コード等の別列は勘定コードの先頭数字と食い違うケースがあり信用できないため使わない)
+          let rowSection = section;
+          if (sectionByAccount) {
+            rowSection = String(account).startsWith('2') ? '投資' : '経費';
+          }
+          keys.push({ pf, caseNo, account, name, section: rowSection });
+        }
+        return keys;
+      }
+      const all = [
+        ...extract(shiwakeWs, 11, 12, 3, 4, '経費'),      // 仕訳明細: L=PF,M=案件番号,D=勘定コード,E=名称
+        ...extract(yosanWs, 12, 13, 8, 9, '経費', null, null, true),  // 予算全件: M=PF,N=案件番号,I=勘定コード,J=名称、I列(勘定コード)が"2"始まりなら投資
+        ...extract(kishoWs, 4, 5, 0, 1, '経費', null, null, true),    // 案件別予算: E=PF,F=案件番号,A=勘定コード,B=名称、A列(勘定コード)が"2"始まりなら投資
+        ...extract(toushiWs, 11, 12, null, null, '投資', 22210100, 'ソフトウェア'), // 減価償却: L=PF,M=案件番号,固定(全行投資)
+      ];
+      const dedup = new Map();
+      for (const k of all) {
+        const key = `${k.section}::${k.pf}::${k.caseNo}::${k.account}`;
+        if (!dedup.has(key)) dedup.set(key, k);
+      }
+      return [...dedup.values()];
+    }
+
+    // シートXML内の<row>要素を1つずつ分解する(自己終了形式にも対応)
+    function splitSheetRows(sheetXml) {
+      const rowRe = /<row r="(\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g;
+      const rows = [];
+      let m;
+      while ((m = rowRe.exec(sheetXml)) !== null) {
+        rows.push({ rowNum: parseInt(m[1], 10), rowAttrs: m[2] || '', body: m[3] || '' });
+      }
+      return rows;
+    }
+
+    // 行本体のXMLから列文字→セル情報のマップを作る
+    function parseRowCells(rowBody) {
+      const cellRe = /<c\s+r="([A-Za-z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+      const cells = {};
+      let cm;
+      while ((cm = cellRe.exec(rowBody)) !== null) {
+        cells[cm[1]] = { attrs: cm[2] || '', inner: cm[3] || '' };
+      }
+      return cells;
+    }
+
+    // 数式内の「自行参照」だけを oldRow→newRow に付け替える。他シート修飾参照(例: 案件別予算!G262)は
+    // '!'の直後にある参照として検出し、対象外のまま素通りさせる(fixFooterFormulaRow系と同じ発想の安全策)
+    function shiftSameRowFormula(formula, oldRow, newRow) {
+      if (!formula || oldRow === newRow) return formula;
+      const cellRefRe = /^(\$?)([A-Za-z]{1,3})(\$?)(\d{1,7})(?!\()/;
+      let result = '', i = 0;
+      const len = formula.length;
+      while (i < len) {
+        const ch = formula[i];
+        if (ch === '"') {
+          let j = i + 1;
+          while (j < len) {
+            if (formula[j] === '"') { if (formula[j + 1] === '"') { j += 2; continue; } j += 1; break; }
+            j += 1;
+          }
+          result += formula.slice(i, j);
+          i = j;
+          continue;
+        }
+        const prevCh = i > 0 ? formula[i - 1] : '';
+        if (/[A-Za-z0-9_$]/.test(prevCh)) { result += ch; i += 1; continue; }
+        const m = cellRefRe.exec(formula.slice(i));
+        if (m) {
+          if (prevCh === '!') {
+            result += m[0];
+          } else {
+            const rowNum = parseInt(m[4], 10);
+            result += rowNum === oldRow ? `${m[1]}${m[2]}${m[3]}${newRow}` : m[0];
+          }
+          i += m[0].length;
+          continue;
+        }
+        result += ch; i += 1;
+      }
+      return result;
+    }
+
+    // 数式セルの「テンプレート」(text, anchorRow)を返す。共有数式のスレーブセルはマスタから解決する
+    function resolveCellFormulaTemplate(cells, col, rowNum, sharedMasters) {
+      const cell = cells[col];
+      if (!cell) return null;
+      const fM = cell.inner.match(/<f\b([^>]*?)(?:\/>|>([^<]*)<\/f>)/);
+      if (!fM) return null;
+      const attrs = fM[1] || '';
+      const text = fM[2];
+      if (text != null && text !== '') return { text, anchorRow: rowNum };
+      const siM = attrs.match(/si="(\d+)"/);
+      if (siM && sharedMasters[siM[1]]) return sharedMasters[siM[1]];
+      return null;
+    }
+
+    // シート全体を走査し、共有数式マスタ(si→{text,anchorRow})の対応表を作る
+    function collectSharedFormulaMasters(rows) {
+      const masters = {};
+      for (const row of rows) {
+        const cells = parseRowCells(row.body);
+        for (const col in cells) {
+          const fM = cells[col].inner.match(/<f\s+([^>]*?)(?:\/>|>([^<]*)<\/f>)/);
+          if (!fM) continue;
+          const text = fM[2];
+          if (text == null || text === '') continue;
+          const siM = fM[1].match(/si="(\d+)"/);
+          if (siM) masters[siM[1]] = { text, anchorRow: row.rowNum };
+        }
+      }
+      return masters;
+    }
+
+    function escXml(v) {
+      return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function replaceStyleAttr(attrs, newIdx) {
+      if (/\bs="\d+"/.test(attrs)) return attrs.replace(/\bs="\d+"/, `s="${newIdx}"`);
+      return `${attrs} s="${newIdx}"`;
+    }
+    function stripTypeAttr(attrs) {
+      return attrs.replace(/\s*t="[^"]*"/, '');
+    }
+
+    // 行を再構成する(数式列は自行参照をshiftSameRowFormulaで付け替え、他は内容そのまま・r属性だけ更新)。
+    // ヘッダー行・セクション区切り行などデータ行以外にも使える汎用版
+    function renumberRowGeneric(row, newRowNum, sharedMasters) {
+      const oldRowNum = row.rowNum;
+      const cells = row.cells;
+      const colOrder = Object.keys(cells).sort((a, b) => xlColToIdx(a) - xlColToIdx(b));
+      const outCells = colOrder.map(col => {
+        const cell = cells[col];
+        const tmpl = resolveCellFormulaTemplate(cells, col, oldRowNum, sharedMasters);
+        if (tmpl) {
+          const finalText = shiftSameRowFormula(tmpl.text, tmpl.anchorRow, newRowNum);
+          // t="e"/t="str"等、前回計算結果の型がキャッシュされたままだと<v>0</v>と矛盾し
+          // Excelの「修復されたレコード: セル情報」の原因になるため、型属性は必ず外す
+          // (fullCalcOnLoadで開いた瞬間に再計算されるので0は単なる暫定値でよい)
+          return `<c r="${col}${newRowNum}"${stripTypeAttr(cell.attrs)}><f>${finalText}</f><v>0</v></c>`;
+        }
+        return cell.inner ? `<c r="${col}${newRowNum}"${cell.attrs}>${cell.inner}</c>` : `<c r="${col}${newRowNum}"${cell.attrs}/>`;
+      });
+      return `<row r="${newRowNum}"${row.rowAttrs}>${outCells.join('')}</row>`;
+    }
+
+    // データ行版: A列(セクション内連番)だけ再計算値に差し替える。それ以外はrenumberRowGenericと同じ
+    function renumberDataRowGeneric(row, newRowNum, seq, sharedMasters) {
+      const oldRowNum = row.rowNum;
+      const cells = row.cells;
+      const colOrder = Object.keys(cells).sort((a, b) => xlColToIdx(a) - xlColToIdx(b));
+      const outCells = colOrder.map(col => {
+        const cell = cells[col];
+        if (col === 'A') return `<c r="A${newRowNum}"${cell.attrs}><v>${seq}</v></c>`;
+        const tmpl = resolveCellFormulaTemplate(cells, col, oldRowNum, sharedMasters);
+        if (tmpl) {
+          const finalText = shiftSameRowFormula(tmpl.text, tmpl.anchorRow, newRowNum);
+          // t="e"/t="str"等、前回計算結果の型がキャッシュされたままだと<v>0</v>と矛盾し
+          // Excelの「修復されたレコード: セル情報」の原因になるため、型属性は必ず外す
+          // (fullCalcOnLoadで開いた瞬間に再計算されるので0は単なる暫定値でよい)
+          return `<c r="${col}${newRowNum}"${stripTypeAttr(cell.attrs)}><f>${finalText}</f><v>0</v></c>`;
+        }
+        return cell.inner ? `<c r="${col}${newRowNum}"${cell.attrs}>${cell.inner}</c>` : `<c r="${col}${newRowNum}"${cell.attrs}/>`;
+      });
+      return `<row r="${newRowNum}"${row.rowAttrs}>${outCells.join('')}</row>`;
+    }
+
+    const CHECK_FORMULA_COLS = ['G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'V', 'W', 'Y'];
+
+    // F列(種別)の分類ルール(2026-09-03 ユーザー確定、同日パターン②③を訂正)。
+    // PF(B列)の範囲と勘定コード(D列)から機械判定する。
+    //   PF 1〜6 : D列が"2"始まり→"投資"、D=83460360→"課題経費（償却）"、それ以外→"課題経費"
+    //   PF 7〜20: D列=83460360→"固定経費（償却）"、それ以外→"固定経費"
+    //   PF 21   : "雑収" / PF 22: "雑損" / PF 23: "特損"
+    // 想定外のPF値(1〜23以外)はnullを返し、呼び出し側で空欄+赤背景にする(ユーザー確認済み)
+    function classifyCheckFColumn(pf, account) {
+      if (pf >= 1 && pf <= 6) {
+        if (String(account).startsWith('2')) return '投資';
+        return account === 83460360 ? '課題経費（償却）' : '課題経費';
+      }
+      if (pf >= 7 && pf <= 20) {
+        return account === 83460360 ? '固定経費（償却）' : '固定経費';
+      }
+      if (pf === 21) return '雑収';
+      if (pf === 22) return '雑損';
+      if (pf === 23) return '特損';
+      return null;
+    }
+
+    // 新規キー行のXMLを、セクションのテンプレート行(投資=最初の既存投資行/経費=最初の既存経費行)から生成する。
+    // B~F列はグレー背景+実値、F列は分類ルールに基づき自動設定(該当なしのみ空欄)、U列は空欄(固定行参照のため自動生成しない)
+    function buildNewCheckRowXml(key, newRowNum, seq, templateRow, templates, section, greyStyleIdx) {
+      const tCells = templateRow.cells;
+      const colOrder = Object.keys(tCells).sort((a, b) => xlColToIdx(a) - xlColToIdx(b));
+      const outCells = [];
+      for (const col of colOrder) {
+        if (col === 'A') { outCells.push(`<c r="A${newRowNum}"${tCells.A.attrs}><v>${seq}</v></c>`); continue; }
+        if (col === 'B') { outCells.push(`<c r="B${newRowNum}"${replaceStyleAttr(tCells.B.attrs, greyStyleIdx.B)}><v>${key.pf}</v></c>`); continue; }
+        if (col === 'C') {
+          const attrs = stripTypeAttr(replaceStyleAttr(tCells.C.attrs, greyStyleIdx.C));
+          outCells.push(`<c r="C${newRowNum}" t="inlineStr"${attrs}><is><t>${escXml(key.caseNo)}</t></is></c>`);
+          continue;
+        }
+        if (col === 'D') {
+          // テンプレート行のD列が文字列型(t="s")の場合があるため、必ず型属性を外してから数値として出力する
+          // (t="s"が残ったまま<v>に生の数値を書くと共有文字列インデックスとして誤解釈され、
+          //  Excelの「修復されたレコード: セル情報」エラー、および次回実行時の重複判定失敗の原因になる)
+          outCells.push(`<c r="D${newRowNum}"${stripTypeAttr(replaceStyleAttr(tCells.D.attrs, greyStyleIdx.D))}><v>${key.account}</v></c>`);
+          continue;
+        }
+        if (col === 'E') {
+          const attrs = stripTypeAttr(replaceStyleAttr(tCells.E.attrs, greyStyleIdx.E));
+          outCells.push(`<c r="E${newRowNum}" t="inlineStr"${attrs}><is><t>${escXml(key.name)}</t></is></c>`);
+          continue;
+        }
+        if (col === 'F') {
+          const fLabel = classifyCheckFColumn(key.pf, key.account);
+          // 分類ルールに該当しない(想定外PF)場合は赤背景にして目視で気づけるようにする
+          const fStyleIdx = fLabel ? greyStyleIdx.F : (greyStyleIdx.F_unclassifiedRed ?? greyStyleIdx.F);
+          const attrs = stripTypeAttr(replaceStyleAttr(tCells.F.attrs, fStyleIdx));
+          outCells.push(fLabel
+            ? `<c r="F${newRowNum}" t="inlineStr"${attrs}><is><t>${escXml(fLabel)}</t></is></c>`
+            : `<c r="F${newRowNum}"${attrs}/>`);
+          continue;
+        }
+        if (col === 'T') {
+          const attrs = stripTypeAttr(tCells.T.attrs);
+          outCells.push(`<c r="T${newRowNum}" t="inlineStr"${attrs}><is><t>${escXml(section)}</t></is></c>`);
+          continue;
+        }
+        if (col === 'U') continue; // 新規行はU列を空欄にする(仕様)
+        if (col === 'X') { outCells.push(`<c r="X${newRowNum}"${tCells.X.attrs}/>`); continue; }
+        const tmpl = templates[col];
+        if (!tmpl) continue; // 例: 投資セクションはG列自体が存在しない
+        const finalText = shiftSameRowFormula(tmpl.text, tmpl.anchorRow, newRowNum);
+        // t="e"等の前回計算結果の型がテンプレート側に残っていると<v>0</v>と矛盾するため型属性を外す
+        outCells.push(`<c r="${col}${newRowNum}"${stripTypeAttr(tCells[col].attrs)}><f>${finalText}</f><v>0</v></c>`);
+      }
+      return `<row r="${newRowNum}"${templateRow.rowAttrs}>${outCells.join('')}</row>`;
+    }
+
+    // 予実明細チェックへの未登録キー行追加。zip上のシートXML・styles.xmlを直接書き換える
+    async function addMissingCheckRows(zip, sheetPaths, newKeys) {
+      const path = sheetPaths['予実明細チェック'];
+      if (!path || !zip.file(path)) return { added: 0 };
+      const sheetXml = await zip.file(path).async('string');
+      const ssFile = zip.file('xl/sharedStrings.xml');
+      const ssXml = ssFile ? await ssFile.async('string') : '';
+      const sharedStrings = [];
+      {
+        const siRe = /<si>([\s\S]*?)<\/si>/g;
+        let sm;
+        // <rPh>(ふりがな注記)は表示文字列に含まれないため、タグ除去前に中身ごと取り除く
+        // (放置すると「26年度投資」+ふりがな「ネンドトウシ」が連結され「26年度投資ネンドトウシ」のような
+        //  誤った文字列になり、既存行との一致判定(exists)が失敗して重複行追加の原因になる)
+        while ((sm = siRe.exec(ssXml)) !== null) {
+          const clean = sm[1].replace(/<rPh[^>]*>[\s\S]*?<\/rPh>/g, '').replace(/<[^>]+>/g, '');
+          sharedStrings.push(clean);
+        }
+      }
+
+      const rows = splitSheetRows(sheetXml);
+      const sharedMasters = collectSharedFormulaMasters(rows);
+
+      // 各行を解析: B(PF,数値・t=s無し)とC(案件番号)の両方を持つ行だけを「データ行」とみなす
+      // (PF別小計行等の集計行もB列に数値PFを持つため、Cが無いことで個別案件行と区別する)
+      const parsed = rows.map(row => {
+        const cells = parseRowCells(row.body);
+        const bCell = cells['B'];
+        const cCell = cells['C'];
+        const dCell = cells['D'];
+        let pf = null;
+        if (bCell && !/t="s"/.test(bCell.attrs)) {
+          const vM = bCell.inner.match(/<v>(-?\d+(?:\.\d+)?)<\/v>/);
+          if (vM) pf = Number(vM[1]);
+        }
+        let caseNo = null;
+        if (cCell) {
+          if (/t="s"/.test(cCell.attrs)) {
+            const vM = cCell.inner.match(/<v>(\d+)<\/v>/);
+            if (vM) caseNo = sharedStrings[parseInt(vM[1], 10)] ?? null;
+          } else {
+            const isM = cCell.inner.match(/<is>[\s\S]*?<t[^>]*>([^<]*)<\/t>/);
+            if (isM) caseNo = isM[1];
+          }
+        }
+        // D(勘定コード)が文字列型(t="s")のセルとして保存されている既存行があるため、
+        // 数値セルだけでなく共有文字列セルからも数値として勘定コードを取り出す
+        let account = null;
+        if (dCell) {
+          if (/t="s"/.test(dCell.attrs)) {
+            const vM = dCell.inner.match(/<v>(\d+)<\/v>/);
+            if (vM) {
+              const s = sharedStrings[parseInt(vM[1], 10)];
+              if (s != null && s !== '' && !Number.isNaN(Number(s))) account = Number(s);
+            }
+          } else {
+            const vM = dCell.inner.match(/<v>(-?\d+(?:\.\d+)?)<\/v>/);
+            if (vM) account = Number(vM[1]);
+          }
+        }
+        return { rowNum: row.rowNum, rowAttrs: row.rowAttrs, cells, pf, caseNo, account, isData: pf != null && !Number.isNaN(pf) && caseNo != null && caseNo !== '' };
+      });
+
+      // セクション分け: PFが直前の値より減少した最初のデータ行を境目とする(投資→経費)
+      let prevPf = -Infinity, boundaryRowNum = null;
+      for (const p of parsed) {
+        if (!p.isData) continue;
+        if (p.pf < prevPf) { boundaryRowNum = p.rowNum; break; }
+        prevPf = p.pf;
+      }
+      parsed.forEach(p => { p.section = (boundaryRowNum !== null && p.rowNum >= boundaryRowNum) ? '経費' : '投資'; });
+
+      const dataRows = parsed.filter(p => p.isData);
+      const investExisting = dataRows.filter(p => p.section === '投資');
+      const expenseExisting = dataRows.filter(p => p.section === '経費');
+      if (!investExisting.length && !expenseExisting.length) return { added: 0 };
+
+      const topHeaderRows = parsed.filter(p => p.rowNum < (investExisting[0] || expenseExisting[0]).rowNum);
+      let separatorRows = [];
+      if (investExisting.length && expenseExisting.length) {
+        const lastInvestRowNum = investExisting[investExisting.length - 1].rowNum;
+        const firstExpenseRowNum = expenseExisting[0].rowNum;
+        separatorRows = parsed.filter(p => p.rowNum > lastInvestRowNum && p.rowNum < firstExpenseRowNum);
+      }
+      // 最後の個別案件行より後ろの行を2種類に分ける:
+      // (1) immediateFollowRows: 個別案件行から行番号が1つも空かずに連続している行
+      //     (例: 「営業外合計」等、直後にある自ブロックの小計行)。これはデータの増減に
+      //     応じて位置が変わって当然なので、区切り行と同じくカーソルに合わせてシフトする
+      // (2) fixedFooterRows: (1)より後ろ、実際に行が1つも無い空白行(テンプレート側の
+      //     余白バッファ)を挟んだ先にある行(PF別小計等の本当の集計フッター)。
+      //     こちらは元の行番号のまま(移動させずに)保持する
+      // 判定は「<row>タグの有無」でも「<c>セル要素の有無」でもなく、
+      // 「値(<v>)か数式(<f>)を持つセルが1つでもあるか」で行う。
+      // Excelは値の無い空白行にも行の高さ(<row>タグ)や、隣接行からの書式継承で
+      // スタイルだけのセル(<c s="N"/>、値・数式なし)を書き込むことがあり、
+      // それらの有無だけで判定すると空白バッファがことごとく「隙間なし」と誤認識されてしまう
+      function rowHasContent(cells) {
+        // <v></v>や<is><t></t></is>のように、タグ自体はあっても中身が空文字の
+        // セルはExcelの行挿入/コピー時に残ることがあるため「内容あり」に含めない。
+        // <f>(数式)は中身が空でも実際に計算されるセルなので内容ありとみなす。
+        return Object.values(cells).some(c => /<v>\s*[^\s<]/.test(c.inner) || /<f\b/.test(c.inner));
+      }
+      const lastDataRowNum = Math.max(...dataRows.map(p => p.rowNum));
+      const afterDataRows = parsed.filter(p => p.rowNum > lastDataRowNum && rowHasContent(p.cells));
+      const immediateFollowRows = [];
+      const fixedFooterRows = [];
+      {
+        let expectedNext = lastDataRowNum + 1;
+        let sawGap = false;
+        for (const row of afterDataRows) {
+          if (!sawGap && row.rowNum === expectedNext) {
+            immediateFollowRows.push(row);
+            expectedNext = row.rowNum + 1;
+          } else {
+            sawGap = true;
+            fixedFooterRows.push(row);
+          }
+        }
+      }
+
+      function compareKey(a, b) {
+        if (a.pf !== b.pf) return a.pf - b.pf;
+        if (a.caseNo !== b.caseNo) return a.caseNo < b.caseNo ? -1 : 1;
+        return a.account - b.account;
+      }
+      function buildFinalList(existingList, newList) {
+        const items = existingList.map(p => ({ kind: 'existing', pf: p.pf, caseNo: p.caseNo, account: p.account, row: p }));
+        for (const nk of newList) {
+          const exists = existingList.some(p => p.pf === nk.pf && p.caseNo === nk.caseNo && p.account === nk.account);
+          if (exists) continue;
+          items.push({ kind: 'new', pf: nk.pf, caseNo: nk.caseNo, account: nk.account, key: nk });
+        }
+        items.sort(compareKey);
+        return items;
+      }
+      const investNew = newKeys.filter(k => k.section === '投資');
+      const expenseNew = newKeys.filter(k => k.section === '経費');
+      const investFinal = buildFinalList(investExisting, investNew);
+      const expenseFinal = buildFinalList(expenseExisting, expenseNew);
+      const addedCount = (investFinal.length - investExisting.length) + (expenseFinal.length - expenseExisting.length);
+      if (addedCount === 0) return { added: 0 };
+
+      const investTemplateRow = investExisting[0] || null;
+      const expenseTemplateRow = expenseExisting[0] || null;
+      function buildColTemplates(templateRow) {
+        if (!templateRow) return {};
+        const t = {};
+        for (const col of CHECK_FORMULA_COLS) {
+          const f = resolveCellFormulaTemplate(templateRow.cells, col, templateRow.rowNum, sharedMasters);
+          if (f) t[col] = f;
+        }
+        return t;
+      }
+      const investTemplates = buildColTemplates(investTemplateRow);
+      const expenseTemplates = buildColTemplates(expenseTemplateRow);
+
+      // 新規行のB~F列用グレー背景スタイルを用意(既存addColorFillStylesByColを流用)
+      let greyStyleIdx = {};
+      const stylesFile = zip.file('xl/styles.xml');
+      if (stylesFile && (investNew.length || expenseNew.length)) {
+        const anchorRow = investTemplateRow || expenseTemplateRow;
+        const colStyles = {};
+        const colorReqs = [];
+        for (const col of ['B', 'C', 'D', 'E', 'F']) {
+          const cIdx = xlColToIdx(col);
+          const m = (anchorRow.cells[col] && anchorRow.cells[col].attrs.match(/s="(\d+)"/)) || null;
+          colStyles[cIdx] = m ? parseInt(m[1], 10) : 0;
+          colorReqs.push({ col: cIdx, argb: 'BFBFBF' });
+        }
+        // F列は分類不能(想定外PF)のとき赤背景で目立たせるため、F列だけ赤も別途用意する
+        colorReqs.push({ col: xlColToIdx('F'), argb: 'FF0000' });
+        const stylesXml = await stylesFile.async('string');
+        const { xml: newStyles, rgbToXfIdx } = addColorFillStylesByCol(stylesXml, colorReqs, colStyles, []);
+        zip.file('xl/styles.xml', newStyles);
+        for (const col of ['B', 'C', 'D', 'E', 'F']) greyStyleIdx[col] = rgbToXfIdx[`${xlColToIdx(col)}::BFBFBF`];
+        greyStyleIdx.F_unclassifiedRed = rgbToXfIdx[`${xlColToIdx('F')}::FF0000`];
+      }
+
+      // 最終行順を組み立てる: 上部ヘッダー(そのまま)→投資ブロック→区切り行(そのまま位置のみ更新)→経費ブロック
+      const outRowsXml = [];
+      for (const h of topHeaderRows) outRowsXml.push(`<row r="${h.rowNum}"${h.rowAttrs}>${Object.keys(h.cells).sort((a,b)=>xlColToIdx(a)-xlColToIdx(b)).map(c=>{
+        const cell = h.cells[c];
+        return cell.inner ? `<c r="${c}${h.rowNum}"${cell.attrs}>${cell.inner}</c>` : `<c r="${c}${h.rowNum}"${cell.attrs}/>`;
+      }).join('')}</row>`);
+
+      let cursor = (topHeaderRows[topHeaderRows.length - 1]?.rowNum || 0) + 1;
+
+      investFinal.forEach((item, idx) => {
+        const rowNum = cursor + idx;
+        if (item.kind === 'existing') outRowsXml.push(renumberDataRowGeneric(item.row, rowNum, idx + 1, sharedMasters));
+        else outRowsXml.push(buildNewCheckRowXml(item.key, rowNum, idx + 1, investTemplateRow, investTemplates, '投資', greyStyleIdx));
+      });
+      cursor += investFinal.length;
+
+      separatorRows.forEach((row, idx) => {
+        outRowsXml.push(renumberRowGeneric(row, cursor + idx, sharedMasters));
+      });
+      cursor += separatorRows.length;
+
+      expenseFinal.forEach((item, idx) => {
+        const rowNum = cursor + idx;
+        if (item.kind === 'existing') outRowsXml.push(renumberDataRowGeneric(item.row, rowNum, idx + 1, sharedMasters));
+        else outRowsXml.push(buildNewCheckRowXml(item.key, rowNum, idx + 1, expenseTemplateRow, expenseTemplates, '経費', greyStyleIdx));
+      });
+      cursor += expenseFinal.length;
+
+      // (1) 個別案件行に隙間無く連続する小計行(「営業外合計」等)はデータと一緒にシフトする
+      immediateFollowRows.forEach((row, idx) => {
+        outRowsXml.push(renumberRowGeneric(row, cursor + idx, sharedMasters));
+      });
+      cursor += immediateFollowRows.length;
+
+      // (2) 集計フッター(PF別小計等)は、テンプレート側で個別案件行との間に
+      // 十分な空き行を確保してある前提のもと、元の行番号のまま(移動させずに)保持する。
+      // データ増加分がその空き行を使い切ってフッターの手前まで到達した場合はエラーにする
+      // (自動でフッターを押し下げると、他の数式が想定する固定行位置と食い違うため)
+      if (fixedFooterRows.length && cursor > fixedFooterRows[0].rowNum) {
+        const shortage = cursor - fixedFooterRows[0].rowNum;
+        throw new Error(`予実明細チェックへの行追加で、データが${cursor}行目まで必要になり、集計フッター(現在${fixedFooterRows[0].rowNum}行目開始)の手前の空き行を使い切りました。集計フッターの開始行を${cursor}行目以降(あと${shortage}行分)に下げて空き行を増やしてください。`);
+      }
+      fixedFooterRows.forEach(row => {
+        outRowsXml.push(renumberRowGeneric(row, row.rowNum, sharedMasters));
+      });
+
+      const finalLastRow = fixedFooterRows.length ? fixedFooterRows[fixedFooterRows.length - 1].rowNum : cursor - 1;
+      let newSheetXml = sheetXml.replace(
+        /(<sheetData[^>]*>)([\s\S]*?)(<\/sheetData>)/,
+        (_, open, __, close) => `${open}${outRowsXml.join('')}${close}`
+      );
+      newSheetXml = newSheetXml.replace(/<dimension ref="([A-Za-z]+)\d+:([A-Za-z]+)\d+"\/>/,
+        (_, c1, c2) => `<dimension ref="${c1}1:${c2}${finalLastRow}"/>`);
+      newSheetXml = newSheetXml.replace(/(<autoFilter ref="[A-Za-z]+)\d+(:[A-Za-z]+)\d+(")/,
+        (_, pre, mid, post) => `${pre}2${mid}${finalLastRow}${post}`);
+
+      zip.file(path, newSheetXml);
+
+      // workbook.xml側の「_xlnm._FilterDatabase」定義名(このシートのオートフィルタ範囲を
+      // ミラーする隠し定義名)もシート側のautoFilterと同じ範囲に更新する。
+      // ここを更新し忘れると、シート自身のautoFilter範囲と定義名の範囲が食い違い、
+      // Excelが開いた際に「修復されたレコード: セル情報」として検出・修復してしまう
+      const wbFile = zip.file('xl/workbook.xml');
+      if (wbFile) {
+        const wbXml = await wbFile.async('string');
+        const newWbXml = wbXml.replace(
+          /(<definedName name="_xlnm\._FilterDatabase"[^>]*>)予実明細チェック![^<]*(<\/definedName>)/,
+          (_, open, close) => `${open}予実明細チェック!$A$2:$Y$${finalLastRow}${close}`
+        );
+        if (newWbXml !== wbXml) zip.file('xl/workbook.xml', newWbXml);
+      }
+
+      return { added: addedCount };
+    }
+
+    async function generateYojitsuCheckOutput(templateBytes, shiwakeBytes, yosanBytes, toushiBytes, kishoBytes, onStep) {
+      const report = (n, state) => { if (onStep) onStep(n, state); };
+      if (typeof JSZip === 'undefined' || typeof JSZip.loadAsync !== 'function') {
+        throw new Error('JSZipが読み込まれていないため処理できません。');
+      }
+      const zip = await JSZip.loadAsync(templateBytes.buffer ?? templateBytes);
+      const sheetPaths = await getSheetPaths(zip);
+
+      // sheetStubs:trueが無いと、値なし・色だけのセル(L3/M3の新規資産ハイライト等)が
+      // SheetJSの読み込み時にセルオブジェクトごと消え、色はおろかセル自体が貼り付け先から欠落する
+      report(1, 'active'); await tick();
+      const shiwakeWb = XLSX.read(shiwakeBytes, { type: 'array', sheetStubs: true });
+      const shiwakeWs = shiwakeWb.Sheets[shiwakeWb.SheetNames[0]];
+      await pasteRowsIntoTemplateSheet(zip, sheetPaths, '仕訳明細', shiwakeWs, shiwakeBytes);
+      report(1, 'done');
+
+      report(2, 'active'); await tick();
+      const yosanWb = XLSX.read(yosanBytes, { type: 'array', sheetStubs: true });
+      const yosanWs = yosanWb.Sheets[yosanWb.SheetNames[0]];
+      await pasteRowsIntoTemplateSheet(zip, sheetPaths, '予算全件', yosanWs, yosanBytes);
+      report(2, 'done');
+
+      report(3, 'active'); await tick();
+      const toushiWb = XLSX.read(toushiBytes, { type: 'array', sheetStubs: true });
+      const toushiWs = toushiWb.Sheets['投資発生'];
+      if (!toushiWs) throw new Error('投資実績ファイルに「投資発生」シートが見つかりません。');
+      await pasteRowsIntoTemplateSheet(zip, sheetPaths, '減価償却', toushiWs, toushiBytes, '投資発生', (c) => c, 27);
+      report(3, 'done');
+
+      report(4, 'active'); await tick();
+      const kishoWb = XLSX.read(kishoBytes, { type: 'array', sheetStubs: true });
+      const kishoWsRaw = kishoWb.Sheets['予算'];
+      if (!kishoWsRaw) throw new Error('予算詳細ファイルに「予算」シートが見つかりません。');
+      // C列(idx2)が空になった行以降は転記対象外(予算シートのデータ終端とみなす)
+      const kishoWsTruncated = truncateAtFirstEmptyCol(kishoWsRaw, 2);
+      // 予算全件ファイルで既に取り込んだ案件番号(予算全件のN列, idx13)と重複する案件番号(予算のF列, idx5)の行は、
+      // 案件別予算シートへ二重に転記しないよう、転記前に除外して行を詰め直す。
+      // ただし予算全件のI列(勘定コード, idx8)が"2"始まり(投資科目)の行は除外対象に含めない
+      const yosanCaseNoSet = collectYosanCaseNoExcludeSet(yosanWs, 13, 8);
+      debugLogCaseNoExclusion(yosanWs, 13, kishoWsTruncated, 5, yosanCaseNoSet);
+      const { ws: kishoWsFiltered, rowMap: kishoRowMap } = filterOutRowsByPf(kishoWsTruncated, 5, yosanCaseNoSet);
+      // 予算シートのG列(idx6)は転記対象外。H列以降を1列左シフトしてG列の位置に詰める
+      const kishoWs = dropColumnAndShiftLeft(kishoWsFiltered, 6);
+      await pasteRowsIntoTemplateSheet(
+        zip, sheetPaths, '案件別予算', kishoWs, kishoBytes, '予算',
+        (destCol) => destCol < 6 ? destCol : destCol + 1,
+        2,
+        kishoRowMap ? (destR) => kishoRowMap[destR] ?? destR : (r) => r
+      );
+      report(4, 'done');
+
+      report(5, 'active'); await tick();
+      // 前回実行時の絞り込み条件が残ったまま新データを流し込むと一部の行が隠れて見えなくなるため、
+      // 貼り付け先4シートのAutoFilterの絞り込み条件だけをクリアする(フィルタボタン自体は残す)
+      for (const name of ['仕訳明細', '予算全件', '減価償却', '案件別予算']) {
+        await clearAutoFilterCriteria(zip, sheetPaths[name]);
+      }
+      report(5, 'done');
+
+      report(6, 'active'); await tick();
+      // 転記した4シートから(PF,案件番号,勘定コード,勘定コード名称)を集め、予実明細チェックに
+      // 未登録の組み合わせがあれば投資/経費の正しいセクション位置に新規行として追加する
+      const checkKeys = collectCheckSourceKeys(shiwakeWs, yosanWs, kishoWs, toushiWs);
+      await addMissingCheckRows(zip, sheetPaths, checkKeys);
+      report(6, 'done');
+
+      await forceFullCalcOnLoad(zip);
+      await removeCalcChain(zip);
+      const outBytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+      return outBytes;
     }
 
   </script>
