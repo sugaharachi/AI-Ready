@@ -3576,9 +3576,55 @@
       console.log('=== [デバッグここまで] ===');
     }
 
+    // 数式内のセル参照の行番号を、removedRows(1始まりの行番号、昇順)の行削除に合わせて補正する(Excelの行削除と同じ挙動)。
+    // 削除行より下の参照は削除行数分だけ上へずらす。範囲の始点/終点が削除行そのものの場合、
+    // 始点は直後の残る行・終点は直前の残る行に寄せる(範囲が縮む)。
+    // 他シート修飾参照(例: 予算全件!M5)は'!'の直後にある参照として検出し、対象外のまま素通りさせる
+    function shiftFormulaRowsForDeletion(formula, removedRows) {
+      if (!formula || !removedRows.length) return formula;
+      const countRemoved = (row, inclusive) => {
+        let n = 0;
+        for (const r of removedRows) { if (r < row || (inclusive && r === row)) n++; else if (r > row) break; }
+        return n;
+      };
+      const cellRefRe = /^(\$?)([A-Za-z]{1,3})(\$?)(\d{1,7})(?!\()/;
+      let result = '', i = 0;
+      const len = formula.length;
+      while (i < len) {
+        const ch = formula[i];
+        if (ch === '"') {
+          let j = i + 1;
+          while (j < len) {
+            if (formula[j] === '"') { if (formula[j + 1] === '"') { j += 2; continue; } j += 1; break; }
+            j += 1;
+          }
+          result += formula.slice(i, j);
+          i = j;
+          continue;
+        }
+        const prevCh = i > 0 ? formula[i - 1] : '';
+        if (/[A-Za-z0-9_$]/.test(prevCh)) { result += ch; i += 1; continue; }
+        const m = cellRefRe.exec(formula.slice(i));
+        if (m) {
+          if (prevCh === '!') {
+            result += m[0];
+          } else {
+            const row = parseInt(m[4], 10);
+            // ':'の直後=範囲の終点。終点が削除行なら直前の残る行へ寄せる(inclusive)
+            const newRow = row - countRemoved(row, prevCh === ':');
+            result += `${m[1]}${m[2]}${m[3]}${Math.max(newRow, 1)}`;
+          }
+          i += m[0].length;
+          continue;
+        }
+        result += ch; i += 1;
+      }
+      return result;
+    }
+
     // wsのpfColIdx列の値がexcludePfSetに含まれる行を除外し、残った行を隙間なく詰め直した
-    // 新しいワークシートを返す。行内の同一行参照の数式(cell.f、例: 集計行のSUM(J538:U538))は
-    // shiftSameRowFormulaで新しい行番号に補正する。
+    // 新しいワークシートを返す。行内の数式(cell.f)は自行参照・範囲参照とも
+    // shiftFormulaRowsForDeletionでExcelの行削除と同じく補正する(例: SUMIF($C$1:$C$705,...)の範囲も縮める)。
     // (予算全件ファイルで取り込み済みの案件番号と重複するデータを、案件別予算シートへ転記する前に
     //  除外するために使用。転記後に空行として残す方式だと見た目が悪くなるため、転記前に詰め直す)
     // 案件番号は文字列のため、Number変換ではなく文字列として正規化(前後空白除去)して比較する
@@ -3596,17 +3642,25 @@
         if (ws[addr]) out[addr] = ws[addr];
       }
       rowMap[range.s.r] = range.s.r;
-      let outR = range.s.r;
+      // 除外する行(1始まりの行番号)を先に確定させる。数式の行参照補正に全体の除外行が必要なため
+      const removedRows = [];
       for (let R = range.s.r + 1; R <= range.e.r; R++) {
         const pfCell = ws[XLSX.utils.encode_cell({ r: R, c: pfColIdx })];
         const pf = pfCell && pfCell.v != null && pfCell.v !== '' ? String(pfCell.v).trim() : null;
-        if (pf != null && pf !== '' && excludePfSet.has(pf)) continue; // 転記対象外(予算全件と重複する案件番号)
+        if (pf != null && pf !== '' && excludePfSet.has(pf)) removedRows.push(R + 1); // 転記対象外(予算全件と重複する案件番号)
+      }
+      const removedSet = new Set(removedRows);
+      let outR = range.s.r;
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        if (removedSet.has(R + 1)) continue;
         outR += 1;
         rowMap[outR] = R;
         for (let C = range.s.c; C <= range.e.c; C++) {
           const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
           if (!cell) continue;
-          const destCell = (cell.f && outR !== R) ? { ...cell, f: shiftSameRowFormula(cell.f, R + 1, outR + 1) } : cell;
+          // 自行参照だけでなく、$C$1:$C$705のような範囲参照もExcelの行削除と同じく詰め直す
+          // (範囲を補正しないと、データ範囲外にあった集計行が詰め直しで範囲内に入り循環参照になる)
+          const destCell = (cell.f && removedRows.length) ? { ...cell, f: shiftFormulaRowsForDeletion(cell.f, removedRows) } : cell;
           out[XLSX.utils.encode_cell({ r: outR, c: C })] = destCell;
         }
       }
