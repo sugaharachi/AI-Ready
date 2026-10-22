@@ -3500,6 +3500,34 @@
       return out;
     }
 
+    // wsのデータ行(ヘッダー行=range.s.rは除く)から指定列(0-indexed)のセルを取り除いた新しいワークシートを返す。
+    // 貼り付け先では値が空欄になり、列書式だけが残る
+    // (案件別予算シートのW・X・Y列を貼り付け対象外にするために使用。2026-10-22 ユーザー指示)
+    function clearDataColumns(ws, colIdxs) {
+      if (!ws || !ws['!ref']) return ws;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const out = { ...ws };
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        for (const C of colIdxs) delete out[XLSX.utils.encode_cell({ r: R, c: C })];
+      }
+      return out;
+    }
+
+    // wsのmaxColIdx列(0-indexed)より右のセルを取り除き、範囲(!ref)もmaxColIdx列までに縮めた新しいワークシートを返す
+    // (案件別予算の転記で予算シートのAC列(貼り付け先ではAB列)より右を対象外にするために使用。2026-10-22 ユーザー指示)
+    function limitColumns(ws, maxColIdx) {
+      if (!ws || !ws['!ref']) return ws;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      if (range.e.c <= maxColIdx) return ws;
+      const out = {};
+      for (const addr of Object.keys(ws)) {
+        if (addr[0] === '!') continue;
+        if (XLSX.utils.decode_cell(addr).c <= maxColIdx) out[addr] = ws[addr];
+      }
+      out['!ref'] = XLSX.utils.encode_range({ s: range.s, e: { r: range.e.r, c: maxColIdx } });
+      return out;
+    }
+
     // wsのpfColIdx列にある値の集合(Set)を返す(ヘッダー行=range.s.rは除く)。
     // (予算全件ファイルで既に取り込み済みの案件番号を把握し、案件別予算シートへの二重転記を避けるために使用。
     //  関数名・引数名はPfのままだが、任意の列を指定できる汎用実装)
@@ -4319,7 +4347,9 @@
       debugLogCaseNoExclusion(yosanWs, 13, kishoWsTruncated, 5, yosanCaseNoSet);
       const { ws: kishoWsFiltered, rowMap: kishoRowMap } = filterOutRowsByPf(kishoWsTruncated, 5, yosanCaseNoSet);
       // 予算シートのG列(idx6)は転記対象外。H列以降を1列左シフトしてG列の位置に詰める
-      const kishoWs = dropColumnAndShiftLeft(kishoWsFiltered, 6);
+      // 貼り付け先のW・X・Y列(idx22〜24)は貼り付け対象外(空欄)にする。
+      // 貼り付けるのは貼り付け先AB列(idx27、予算シートのAC列)まで
+      const kishoWs = limitColumns(clearDataColumns(dropColumnAndShiftLeft(kishoWsFiltered, 6), [22, 23, 24]), 27);
       await pasteRowsIntoTemplateSheet(
         zip, sheetPaths, '案件別予算', kishoWs, kishoBytes, '予算',
         (destCol) => destCol < 6 ? destCol : destCol + 1,
