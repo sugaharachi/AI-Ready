@@ -4052,6 +4052,93 @@
       return `<row r="${newRowNum}"${templateRow.rowAttrs}>${outCells.join('')}</row>`;
     }
 
+    // styles.xmlの各fillの塗りつぶし色を'RRGGBB'で返す(単色塗りでない/色を解決できないfillはnull)。
+    // Excelのパレットで選んだ色はrgbではなくtheme+tintで保存されるため、白(theme0)・黒(theme1)基準の
+    // 明暗調整をHSL輝度の式で計算して実際の色に直す(テーマは標準の白=FFFFFF/黒=000000を前提とする)
+    function resolveFillColors(stylesXml) {
+      const fillsM = stylesXml.match(/<fills[^>]*>([\s\S]*?)<\/fills>/);
+      if (!fillsM) return [];
+      const INDEXED = { 10: 'FF0000', 22: 'C0C0C0', 23: '808080', 55: '969696' };
+      const fills = fillsM[1].match(/<fill\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/fill>)/g) || [];
+      return fills.map(fill => {
+        if (!/patternType="solid"/.test(fill)) return null;
+        const fg = fill.match(/<fgColor\b([^>]*)\/?>/);
+        if (!fg) return null;
+        const attrs = fg[1];
+        const rgbM = attrs.match(/\brgb="([0-9A-Fa-f]{6,8})"/);
+        if (rgbM) return rgbM[1].slice(-6).toUpperCase();
+        const idxM = attrs.match(/\bindexed="(\d+)"/);
+        if (idxM) return INDEXED[idxM[1]] ?? null;
+        const themeM = attrs.match(/\btheme="(\d+)"/);
+        if (!themeM || (themeM[1] !== '0' && themeM[1] !== '1')) return null;
+        const tintM = attrs.match(/\btint="(-?[\d.]+(?:E-?\d+)?)"/i);
+        const tint = tintM ? parseFloat(tintM[1]) : 0;
+        const base = themeM[1] === '0' ? 1 : 0; // theme0=白(背景1), theme1=黒(テキスト1)
+        const lum = tint < 0 ? base * (1 + tint) : base * (1 - tint) + tint;
+        const hex = Math.round(Math.min(Math.max(lum, 0), 1) * 255).toString(16).padStart(2, '0').toUpperCase();
+        return hex + hex + hex;
+      });
+    }
+
+    // 予実明細チェック: 前月に追加した明細行の背景色を消す(Card5 Step6の行追加より前に実行。2026-10-23 ユーザー指示)
+    //   B〜F列のグレー(BFBFBF/D9D9D9/A6A6A6/808080)は消す。F列の赤(種別の判定不能)はF列に値が入っていれば消し、
+    //   空欄のままなら気づけるよう残す。それ以外の色(手作業で付けた色等)はそのまま残す。
+    //   罫線・表示形式等を保つため、元のxfの塗りつぶしだけを外したクローン(addColorFillStylesByColのclearFillMap)に差し替える
+    async function clearPrevAddedRowFills(zip, sheetPaths) {
+      const path = sheetPaths['予実明細チェック'];
+      const stylesFile = zip.file('xl/styles.xml');
+      if (!path || !zip.file(path) || !stylesFile) return { cleared: 0 };
+      let sheetXml = await zip.file(path).async('string');
+      const stylesXml = await stylesFile.async('string');
+
+      const GREYS = ['BFBFBF', 'D9D9D9', 'A6A6A6', '808080'];
+      // theme+tintの計算は丸め方で1ずれうるため、各成分±1まで同じ色とみなす
+      const near = (a, b) => [0, 2, 4].every(i => Math.abs(parseInt(a.substr(i, 2), 16) - parseInt(b.substr(i, 2), 16)) <= 1);
+      const fillColors = resolveFillColors(stylesXml);
+      const xfsM = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const xfs = xfsM ? (xfsM[1].match(/<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g) || []) : [];
+      const greyXfs = new Set(), redXfs = new Set();
+      xfs.forEach((xf, i) => {
+        const fM = xf.match(/\bfillId="(\d+)"/);
+        const color = fM ? fillColors[parseInt(fM[1], 10)] : null;
+        if (!color) return;
+        if (GREYS.some(g => near(g, color))) greyXfs.add(i);
+        else if (color === 'FF0000') redXfs.add(i);
+      });
+      if (!greyXfs.size && !redXfs.size) return { cleared: 0 };
+
+      // 対象は明細行(B列=数値のPF、C列=案件番号を持つ行。addMissingCheckRowsのデータ行判定と同じ)のB〜F列のみ
+      const targets = []; // { rowNum, col, xfIdx }
+      for (const row of splitSheetRows(sheetXml)) {
+        const cells = parseRowCells(row.body);
+        const b = cells['B'], c = cells['C'];
+        if (!b || /t="s"/.test(b.attrs) || !/<v>-?\d/.test(b.inner)) continue;
+        if (!c || !(/<v>\s*[^\s<]/.test(c.inner) || /<t[^>]*>[^<]+</.test(c.inner))) continue;
+        for (const col of ['B', 'C', 'D', 'E', 'F']) {
+          const cell = cells[col];
+          const sM = cell && cell.attrs.match(/\bs="(\d+)"/);
+          if (!sM) continue;
+          const xfIdx = parseInt(sM[1], 10);
+          const fHasValue = col === 'F' && (/<v>\s*[^\s<]/.test(cell.inner) || /<t[^>]*>[^<]+</.test(cell.inner));
+          if (greyXfs.has(xfIdx) || (col === 'F' && redXfs.has(xfIdx) && fHasValue)) {
+            targets.push({ rowNum: row.rowNum, col, xfIdx });
+          }
+        }
+      }
+      if (!targets.length) return { cleared: 0 };
+
+      const { xml: newStyles, clearFillMap } = addColorFillStylesByCol(stylesXml, [], {}, targets.map(t => t.xfIdx));
+      zip.file('xl/styles.xml', newStyles);
+      const targetMap = new Map(targets.map(t => [`${t.col}${t.rowNum}`, clearFillMap[t.xfIdx]]));
+      sheetXml = sheetXml.replace(/<c r="([B-F]\d+)"([^>]*?)(\/?>)/g, (whole, ref, attrs, end) => {
+        const newIdx = targetMap.get(ref);
+        if (newIdx === undefined) return whole;
+        return `<c r="${ref}"${attrs.replace(/\bs="\d+"/, `s="${newIdx}"`)}${end}`;
+      });
+      zip.file(path, sheetXml);
+      return { cleared: targets.length };
+    }
+
     // 予実明細チェックへの未登録キー行追加。zip上のシートXML・styles.xmlを直接書き換える
     async function addMissingCheckRows(zip, sheetPaths, newKeys) {
       const path = sheetPaths['予実明細チェック'];
@@ -4370,6 +4457,8 @@
       // 転記した4シートから(PF,案件番号,勘定コード,勘定コード名称)を集め、予実明細チェックに
       // 未登録の組み合わせがあれば投資/経費の正しいセクション位置に新規行として追加する
       const checkKeys = collectCheckSourceKeys(shiwakeWs, yosanWs, kishoWs, toushiWs);
+      // 前月に追加した行の背景色(グレー等)を先に消し、今月追加した行だけが色付きで見分けられるようにする
+      await clearPrevAddedRowFills(zip, sheetPaths);
       await addMissingCheckRows(zip, sheetPaths, checkKeys);
       report(6, 'done');
 
