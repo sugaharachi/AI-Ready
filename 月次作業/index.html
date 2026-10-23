@@ -638,6 +638,10 @@
             <div>
               <p class="text-emerald-800 font-medium text-sm">取込が完了しました</p>
               <p id="yojitsuSuccessDetail" class="text-emerald-600 text-xs mt-0.5"></p>
+              <div id="yojitsuWarnings" style="display:none" class="mt-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                <p class="text-amber-800 font-medium text-xs">目視確認が必要な箇所があります</p>
+                <ul id="yojitsuWarningList" class="list-disc pl-4 mt-1 text-amber-700 text-xs space-y-0.5"></ul>
+              </div>
             </div>
           </div>
 
@@ -3341,6 +3345,8 @@
 
     function resetYojitsu() {
       yojitsuSuccess.style.display = 'none';
+      document.getElementById('yojitsuWarnings').style.display = 'none';
+      document.getElementById('yojitsuWarningList').replaceChildren();
       yojitsuError.style.display = 'none';
       yojitsuDownloadArea.style.display = 'none';
       if (dlYojitsu._objUrl) { URL.revokeObjectURL(dlYojitsu._objUrl); dlYojitsu._objUrl = null; }
@@ -3379,7 +3385,7 @@
         const toushiBytes   = new Uint8Array(await yojitsuToushiFile.arrayBuffer());
         const kishoBytes    = new Uint8Array(await yojitsuKishoFile.arrayBuffer());
 
-        const outBytes = await generateYojitsuCheckOutput(
+        const { outBytes, warnings } = await generateYojitsuCheckOutput(
           templateBytes, shiwakeBytes, yosanBytes, toushiBytes, kishoBytes,
           (n, state) => setYojitsuStep(n, state)
         );
@@ -3395,6 +3401,12 @@
         dlYojitsu.download = outName;
 
         yojitsuSuccessDetail.textContent = `${outName} を生成しました`;
+        // ツールで判断できず目視確認が必要な箇所を完了メッセージ内に一覧表示する
+        if (warnings.length) {
+          const list = document.getElementById('yojitsuWarningList');
+          list.replaceChildren(...warnings.map(w => { const li = document.createElement('li'); li.textContent = w; return li; }));
+          document.getElementById('yojitsuWarnings').style.display = 'block';
+        }
         yojitsuSuccess.style.display = 'flex';
         yojitsuDownloadArea.style.display = 'block';
 
@@ -4139,6 +4151,52 @@
       return { cleared: targets.length };
     }
 
+    // 予実明細チェックで、ツールが判断できず目視確認が必要な箇所を完了メッセージ用の文字列の配列で返す(2026-10-23 ユーザー指示)。
+    // 現状の対象: F列(種別)を判定できず赤背景のまま空欄の明細行(今月追加分・前月以前から未入力の分の両方)
+    async function collectCheckWarnings(zip, sheetPaths) {
+      const path = sheetPaths['予実明細チェック'];
+      const stylesFile = zip.file('xl/styles.xml');
+      if (!path || !zip.file(path) || !stylesFile) return [];
+      const sheetXml = await zip.file(path).async('string');
+      const stylesXml = await stylesFile.async('string');
+      const fillColors = resolveFillColors(stylesXml);
+      const xfsM = stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/);
+      const xfs = xfsM ? (xfsM[1].match(/<xf\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/xf>)/g) || []) : [];
+      const redXfs = new Set();
+      xfs.forEach((xf, i) => {
+        const fM = xf.match(/\bfillId="(\d+)"/);
+        if (fM && fillColors[parseInt(fM[1], 10)] === 'FF0000') redXfs.add(i);
+      });
+      if (!redXfs.size) return [];
+
+      const ssFile = zip.file('xl/sharedStrings.xml');
+      const ssXml = ssFile ? await ssFile.async('string') : '';
+      const sharedStrings = (ssXml.match(/<si>[\s\S]*?<\/si>/g) || [])
+        .map(si => si.replace(/<rPh[^>]*>[\s\S]*?<\/rPh>/g, '').replace(/<[^>]+>/g, ''));
+      const unescXml = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+      const cellText = (cell) => {
+        if (!cell) return '';
+        if (/t="s"/.test(cell.attrs)) {
+          const vM = cell.inner.match(/<v>(\d+)<\/v>/);
+          return vM ? unescXml(sharedStrings[parseInt(vM[1], 10)] ?? '').trim() : '';
+        }
+        const tM = cell.inner.match(/<t[^>]*>([^<]*)<\/t>/) || cell.inner.match(/<v>([^<]*)<\/v>/);
+        return tM ? unescXml(tM[1]).trim() : '';
+      };
+
+      const warnings = [];
+      for (const row of splitSheetRows(sheetXml)) {
+        const cells = parseRowCells(row.body);
+        const pf = cellText(cells['B']), caseNo = cellText(cells['C']);
+        if (!pf || !caseNo || Number.isNaN(Number(pf))) continue; // 明細行(B=PF数値・C=案件番号あり)のみ
+        const f = cells['F'];
+        const sM = f && f.attrs.match(/\bs="(\d+)"/);
+        if (!sM || !redXfs.has(parseInt(sM[1], 10)) || cellText(f) !== '') continue;
+        warnings.push(`予実明細チェック ${row.rowNum}行目: 種別(F列)を判定できませんでした(PF=${pf}, 案件番号=${caseNo}, 勘定コード=${cellText(cells['D'])})。種別を入力してください`);
+      }
+      return warnings;
+    }
+
     // 予実明細チェックへの未登録キー行追加。zip上のシートXML・styles.xmlを直接書き換える
     async function addMissingCheckRows(zip, sheetPaths, newKeys) {
       const path = sheetPaths['予実明細チェック'];
@@ -4460,12 +4518,14 @@
       // 前月に追加した行の背景色(グレー等)を先に消し、今月追加した行だけが色付きで見分けられるようにする
       await clearPrevAddedRowFills(zip, sheetPaths);
       await addMissingCheckRows(zip, sheetPaths, checkKeys);
+      // 行追加後の最終的な行番号で、ツールが判断できず目視確認が必要な箇所を集める
+      const warnings = await collectCheckWarnings(zip, sheetPaths);
       report(6, 'done');
 
       await forceFullCalcOnLoad(zip);
       await removeCalcChain(zip);
       const outBytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
-      return outBytes;
+      return { outBytes, warnings };
     }
 
   </script>
